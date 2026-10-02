@@ -1,0 +1,255 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-02T13:28:49.702549+00:00",
+  "title": "Design System: Fairstage",
+  "extensions": {
+    "colorMeta": {
+      "blue": {
+        "role": "primary",
+        "displayName": "Civic blue"
+      },
+      "blue-dark": {
+        "role": "primary",
+        "displayName": "Deep blue"
+      },
+      "lime": {
+        "role": "secondary",
+        "displayName": "Agreement lime"
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink"
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted text"
+      },
+      "ice": {
+        "role": "neutral",
+        "displayName": "Ice"
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Line"
+      },
+      "white": {
+        "role": "neutral",
+        "displayName": "White"
+      },
+      "green": {
+        "role": "tertiary",
+        "displayName": "Release green"
+      },
+      "danger": {
+        "role": "tertiary",
+        "displayName": "Dispute red"
+      },
+      "blue-soft": {
+        "role": "primary",
+        "displayName": "Soft blue"
+      },
+      "on-blue-muted": {
+        "role": "neutral",
+        "displayName": "Muted text on blue"
+      },
+      "workspace-bg": {
+        "role": "neutral",
+        "displayName": "Workspace background"
+      },
+      "pale-surface": {
+        "role": "neutral",
+        "displayName": "Pale surface"
+      },
+      "field-line": {
+        "role": "neutral",
+        "displayName": "Field line"
+      },
+      "focus": {
+        "role": "primary",
+        "displayName": "Keyboard focus"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Large public headings."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section headings."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Compact content titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Terms and descriptions."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Compact controls and field labels."
+      }
+    },
+    "shadows": [
+      {
+        "name": "button-hover",
+        "value": "0 6px 16px rgb(20 27 51 / 0.1)",
+        "purpose": "Soft depth on button hover."
+      },
+      {
+        "name": "role-active",
+        "value": "0 2px 4px rgb(20 27 51/0.08)",
+        "purpose": "Selected role control."
+      },
+      {
+        "name": "mobile-menu",
+        "value": "0 16px 25px rgb(20 27 51/0.08)",
+        "purpose": "Open public menu."
+      }
+    ],
+    "motion": [
+      {
+        "name": "button-state",
+        "value": "background 0.18s, box-shadow 0.18s",
+        "purpose": "Button state changes."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "animation: none !important; transition: none !important; scroll-behavior: auto;",
+        "purpose": "Honor the reduced-motion preference."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "wide",
+        "value": "1450px"
+      },
+      {
+        "name": "compact-desktop",
+        "value": "1150px"
+      },
+      {
+        "name": "tablet",
+        "value": "900px"
+      },
+      {
+        "name": "mobile",
+        "value": "620px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary button for a clear next action.",
+      "html": "<button class=\"ds-button-primary\">Review rounds</button>",
+      "css": ".ds-button-primary{display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:48px;padding:12px 22px;border:0;border-radius:8px;font-family:var(--body);font-size:14px;font-weight:600;line-height:1.3;cursor:pointer;transition:background 0.18s,box-shadow 0.18s;background:var(--blue);color:var(--white);}.ds-button-primary:hover{background:var(--blue-dark);box-shadow:0 6px 16px rgb(20 27 51 / 0.1);}.ds-button-primary:focus-visible{outline:3px solid var(--focus,#7888ff);outline-offset:4px}.ds-button-primary:disabled{cursor:wait;opacity:0.55;}@media(prefers-reduced-motion:reduce){.ds-button-primary{transition:none;}}"
+    },
+    {
+      "name": "Lime button",
+      "kind": "button",
+      "refersTo": "button-lime",
+      "description": "Lime button for a clear next action.",
+      "html": "<button class=\"ds-button-lime\">Review rounds</button>",
+      "css": ".ds-button-lime{display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:48px;padding:12px 22px;border:0;border-radius:8px;font-family:var(--body);font-size:14px;font-weight:600;line-height:1.3;cursor:pointer;transition:background 0.18s,box-shadow 0.18s;background:var(--lime);color:var(--ink);}.ds-button-lime:hover{background:#cce851;box-shadow:0 6px 16px rgb(20 27 51 / 0.1);}.ds-button-lime:focus-visible{outline:3px solid var(--focus,#7888ff);outline-offset:4px}.ds-button-lime:disabled{cursor:wait;opacity:0.55;}@media(prefers-reduced-motion:reduce){.ds-button-lime{transition:none;}}"
+    },
+    {
+      "name": "Dark button",
+      "kind": "button",
+      "refersTo": "button-dark",
+      "description": "Dark button for a clear next action.",
+      "html": "<button class=\"ds-button-dark\">Review rounds</button>",
+      "css": ".ds-button-dark{display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:48px;padding:12px 22px;border:0;border-radius:8px;font-family:var(--body);font-size:14px;font-weight:600;line-height:1.3;cursor:pointer;transition:background 0.18s,box-shadow 0.18s;background:var(--ink);color:var(--white);}.ds-button-dark:hover{background:var(--blue-dark);box-shadow:0 6px 16px rgb(20 27 51 / 0.1);}.ds-button-dark:focus-visible{outline:3px solid var(--focus,#7888ff);outline-offset:4px}.ds-button-dark:disabled{cursor:wait;opacity:0.55;}@media(prefers-reduced-motion:reduce){.ds-button-dark{transition:none;}}"
+    },
+    {
+      "name": "Secondary button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Secondary button for a clear next action.",
+      "html": "<button class=\"ds-button-secondary\">Review rounds</button>",
+      "css": ".ds-button-secondary{display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:48px;padding:12px 22px;border:0;border-radius:8px;font-family:var(--body);font-size:14px;font-weight:600;line-height:1.3;cursor:pointer;transition:background 0.18s,box-shadow 0.18s;background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line);}.ds-button-secondary:hover{background:var(--ice);box-shadow:0 6px 16px rgb(20 27 51 / 0.1);}.ds-button-secondary:focus-visible{outline:3px solid var(--focus,#7888ff);outline-offset:4px}.ds-button-secondary:disabled{cursor:wait;opacity:0.55;}@media(prefers-reduced-motion:reduce){.ds-button-secondary{transition:none;}}"
+    },
+    {
+      "name": "Text field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "A labeled field for round terms.",
+      "html": "<label class=\"ds-field\">Candidate email<input type=\"email\" placeholder=\"alex@example.test\"></label>",
+      "css": ".ds-field{display:grid;gap:7px;font-family:var(--body);color:var(--ink);font-size:13px;font-weight:600}.ds-field input{border:1px solid #c4ccdc;border-radius:7px;min-height:46px;padding:11px 12px;color:var(--ink);background:var(--white);font:400 15px/1.5 var(--body)}.ds-field input::placeholder{color:#67738b;opacity:1}.ds-field input:focus-visible{outline:3px solid var(--focus,#7888ff);outline-offset:4px}"
+    },
+    {
+      "name": "Record panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "A flat panel for records and activity.",
+      "html": "<section class=\"ds-panel\"><h2>Your interview rounds</h2><p>Review the terms before you accept.</p></section>",
+      "css": ".ds-panel{border:1px solid var(--line);background:var(--white);border-radius:12px;overflow:hidden;color:var(--ink);font:15px/1.6 var(--body)}.ds-panel h2{font:700 18px/1.16 var(--display);letter-spacing:-0.03em;margin:0;padding:23px 25px;border-bottom:1px solid var(--line)}.ds-panel p{padding:25px;margin:0;color:var(--muted)}"
+    },
+    {
+      "name": "Payment state",
+      "kind": "chip",
+      "refersTo": "status",
+      "description": "A text label and color identify the payment state.",
+      "html": "<span class=\"ds-status\">Funded</span>",
+      "css": ".ds-status{display:inline-flex;align-items:center;gap:5px;background:#edf0ff;color:var(--blue);padding:4px 9px;border-radius:5px;font:600 10px/1.6 var(--body);text-transform:capitalize;white-space:nowrap}"
+    },
+    {
+      "name": "Workspace navigation",
+      "kind": "nav",
+      "description": "Compact links with an active route.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Workspace\"><a href=\"#overview\" aria-current=\"page\">Overview</a><a href=\"#rounds\">Interview rounds</a></nav>",
+      "css": ".ds-nav{display:grid;gap:7px;font-family:var(--body)}.ds-nav a{display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:7px;color:var(--muted);font-size:13px;font-weight:500;text-decoration:none}.ds-nav a:hover{background:var(--ice);color:var(--ink)}.ds-nav a[aria-current=\"page\"]{background:#edf0ff;color:var(--blue)}.ds-nav a:focus-visible{outline:3px solid var(--focus,#7888ff);outline-offset:4px}"
+    },
+    {
+      "name": "Round path row",
+      "kind": "custom",
+      "description": "Round details and pay share one row.",
+      "html": "<div class=\"ds-round\"><span class=\"ds-number\">1</span><div class=\"ds-row\"><div><strong>Introduction</strong><span>30 minutes</span></div><b>$15</b></div></div>",
+      "css": ".ds-round{position:relative;padding-left:50px;font-family:var(--body)}.ds-round:before{content:\"\";position:absolute;left:20px;top:50%;width:30px;border-top:2px solid #adb8ff}.ds-number{position:absolute;left:0;top:calc(50% - 19px);width:38px;height:38px;border-radius:50%;background:var(--white);color:var(--ink);display:grid;place-items:center;font-size:15px;font-weight:700}.ds-row{display:flex;align-items:center;gap:16px;padding:23px 22px;background:var(--white);color:var(--ink);border-radius:12px}.ds-row>div{flex:1}.ds-row strong{font-size:15px}.ds-row span{display:block;margin-top:4px;color:var(--muted);font-size:12px}.ds-row b{font-family:var(--display);font-size:28px;color:var(--blue)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Civic co-op",
+    "overview": "Fairstage uses direct type, blue fields, and clear rows to make interview terms easy to compare. Lime gives actions and prompts a visible place.\n\nPublic pages use broad color areas and large headings. The workspace uses compact labels, white panels, and visible dividers. Both surfaces show amounts beside round details.",
+    "keyCharacteristics": [
+      "Blue fields with white content.",
+      "Lime actions and prompts.",
+      "Connected rounds with visible amounts.",
+      "Flat panels with clear borders."
+    ],
+    "rules": [
+      {
+        "name": "The Action Context Rule",
+        "body": "Use blue actions on neutral surfaces. Use lime actions on blue fields.",
+        "section": "colors"
+      },
+      {
+        "name": "The Amount Rule",
+        "body": "Keep monetary amounts clear within their row. Use Manrope for large summary amounts.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Panel Rule",
+        "body": "Use borders and color changes to separate record panels. Keep panel backgrounds flat.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use the Action Context Rule for primary actions.",
+      "Do keep round amounts beside their terms.",
+      "Do pair state colors with text labels.",
+      "Do keep keyboard focus visible.",
+      "Do honor the reduced-motion preference.",
+      "Do keep demo labels beside fictional data."
+    ],
+    "donts": [
+      "Do not replace the display font with a system display face.",
+      "Do not use text glyphs as action icons.",
+      "Do not use hard offset shadows in this visual system.",
+      "Do not add decorative eyebrow labels above headings."
+    ]
+  }
+}
