@@ -1,0 +1,14 @@
+node_modules/
+.next/
+.vercel/
+.env*
+!.env.example
+*.tsbuildinfo
+next-env.d.ts
+test-results/
+playwright-report/
+coverage/
+.impeccable/sketches/
+.impeccable/mocks/
+.DS_Store
+*.log
