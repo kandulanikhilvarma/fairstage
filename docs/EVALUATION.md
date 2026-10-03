@@ -57,17 +57,35 @@ The demo API refuses account registration and Stripe events.
 The supplied hygiene skill contains no audit or Mermaid helper scripts.
 Equivalent checks use the repository's actual files and Git state.
 The direct checks cover YAML, license, citation, closed fences, Mermaid text, author identity, and commit messages.
-No helper-script success is claimed.
+The checks did not run the absent helper scripts.
 
 The repository includes CI, contribution instructions, a security policy, and an MIT license.
 CI runs tests, builds the app, and applies the migration to PostgreSQL 17.
-Publishing requires a successful CI run before the squash merge.
+The release needs a successful CI run before the squash merge.
 The pre-merge base has a backup branch.
+
+Pull request [#1](https://github.com/kandulanikhilvarma/fairstage/pull/1) passed CI and has a squash merge.
+The merged main branch also [passed CI](https://github.com/kandulanikhilvarma/fairstage/actions/runs/37014071806).
+The merge author has the owner's canonical name and email. The commit has no automated-tool attribution.
+GitHub rendered the README architecture diagram successfully.
+
+## Public deployment
+
+Vercel published [the public demo](https://fairstage.vercel.app) from the verified main branch.
+HTTP checks passed for 14 app pages, two API endpoints, and the sitemap.
+The health endpoint reports `status: ok`, `mode: demo`, and `version: 1.0.0`.
+The registration and Stripe webhook endpoints return 503 in demo mode.
+
+See [the deployment record](DEPLOYMENT.md) and [HTTP evidence](deployment-evidence.json).
+The live screenshot is `docs/screenshots/live-home.png`.
+On 3 October, the live browser check confirmed the demo round from both account roles.
+The simulated release followed both confirmations and remained after a page reload.
+The candidate screenshot is `docs/screenshots/live-workspace.png`.
 
 ## Launch limits
 
 - No commercial Stripe account or live transaction has passed acceptance checks.
-- No hosted database or email account is configured for the public demo.
+- The public demo has no hosted database or email account.
 - Country support and employment terms need the owner's local review.
 - Salary deductions and repayment debts have no implementation.
 - The bonus credit is a calculator proposal, with no payroll instructions.

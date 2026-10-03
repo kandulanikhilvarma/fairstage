@@ -5,6 +5,8 @@
 
 **Good interviews. Fair pay.**
 
+[Open the live demo](https://fairstage.vercel.app) · [Deployment record](docs/DEPLOYMENT.md)
+
 Fairstage is an open-source app for paid interview rounds.
 Employers set a clear amount, duration, and scope.
 Candidates accept the terms before the employer funds the round.
