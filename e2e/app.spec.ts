@@ -647,7 +647,9 @@ test.describe("production workflows with an isolated local PostgreSQL database",
         .click();
       await expect(
         candidatePage.locator('.notice.success[role="status"]'),
-      ).toHaveText("Application saved.");
+      ).toHaveText(
+        "Application saved. You can see it in the candidate workspace.",
+      );
       await employerPage.reload();
       await employerPage
         .getByLabel(`Application status for ${candidate.name}`, { exact: true })
