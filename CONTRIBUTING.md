@@ -1,7 +1,7 @@
 # Contribute
 
 Open an issue with a concrete problem and a reproducible example.
-Use fictional data. Do not include candidate or payment details.
+Use non-sensitive test records. Do not include candidate or payment details.
 
 1. Create a feature branch.
 2. Install dependencies with `npm ci`.

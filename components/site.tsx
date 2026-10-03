@@ -2,7 +2,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ArrowRight, ArrowUpRight, Check, Menu, X } from "lucide-react";
-import { useApp } from "./provider";
 
 export function Logo() {
   return (
@@ -48,8 +47,8 @@ export function SiteHeader() {
           <Link href="/account" className="button small secondary">
             Sign in
           </Link>
-          <Link href="/workspace" className="button small">
-            Try the demo <ArrowRight size={16} />
+          <Link href="/account" className="button small">
+            Get started <ArrowRight size={16} />
           </Link>
         </nav>
       </div>
@@ -64,7 +63,7 @@ export function Footer() {
           <Logo />
           <p>Good interviews start with respect for time.</p>
           <span className="muted small-text">
-            An open-source product by Nikhilvarma Kandula.
+            A product by Nikhilvarma Kandula.
           </span>
         </div>
         <div className="footer-links">
@@ -77,8 +76,8 @@ export function Footer() {
         </div>
       </div>
       <div className="container footer-note">
-        <span>© 2026 Fairstage. MIT-licensed code.</span>
-        <span>Demo data. No real payments.</span>
+        <span>© 2026 Fairstage. All rights reserved.</span>
+        <Link href="/examples">Interview templates</Link>
       </div>
     </footer>
   );
@@ -91,15 +90,6 @@ export function PublicShell({ children }: { children: React.ReactNode }) {
       <Footer />
     </>
   );
-}
-export function DemoNotice() {
-  const { config } = useApp();
-  return config.demo ? (
-    <div className="demo-notice">
-      <span className="status-dot" /> Interactive demo · Fictional data. No
-      money moves.
-    </div>
-  ) : null;
 }
 export function Tick({ children }: { children: React.ReactNode }) {
   return (

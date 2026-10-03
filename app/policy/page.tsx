@@ -55,8 +55,9 @@ export default function Policy() {
           company.
         </p>
         <p>
-          The public demo cannot charge a card, transfer money, or create a real
-          account.
+          INR payments use Razorpay. USD payments use Stripe in supported
+          markets. Each candidate must complete the provider&apos;s account
+          checks.
         </p>
       </div>
     </PublicShell>

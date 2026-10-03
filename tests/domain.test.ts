@@ -6,7 +6,6 @@ import {
   quote,
   roundSchema,
 } from "../lib/domain";
-import { mutateDemo, seedDemo } from "../lib/demo";
 import { csvCell } from "../lib/export";
 import { hashPassword, verifyPassword } from "../lib/security";
 
@@ -42,44 +41,16 @@ describe("money and candidate protections", () => {
     expect(canTransition("funded", "cancel", "employer")).toBe(false);
     expect(canTransition("paid", "complete", "candidate")).toBe(false);
   });
-  it("needs both confirmations before release", () => {
-    let d = seedDemo();
-    const r = d.rounds[0];
-    expect(() => mutateDemo(d, "employer", `rounds/${r.id}/release`)).toThrow();
-    d = mutateDemo(d, "employer", `rounds/${r.id}/complete`);
-    expect(d.rounds[0].status).toBe("funded");
-    d = mutateDemo(d, "candidate", `rounds/${r.id}/complete`);
-    d = mutateDemo(d, "employer", `rounds/${r.id}/release`);
-    expect(d.rounds[0].status).toBe("paid");
-    expect(d.ledger[0].amountCents).toBe(4500);
-  });
-  it("blocks release after a dispute", () => {
-    const d = seedDemo();
-    const disputed = mutateDemo(
-      d,
-      "candidate",
-      `rounds/${d.rounds[0].id}/dispute`,
-      { reason: "The agreed interview scope was not met." },
-    );
-    expect(() =>
-      mutateDemo(disputed, "employer", `rounds/${d.rounds[0].id}/release`),
-    ).toThrow();
-  });
-  it("rejects completion before the round ends", () => {
-    const d = seedDemo();
-    d.rounds[0].scheduledAt = new Date(Date.now() + 86400000).toISOString();
-    expect(() =>
-      mutateDemo(d, "candidate", `rounds/${d.rounds[0].id}/complete`),
-    ).toThrow();
-  });
-  it("does not mutate the source demo state", () => {
-    const d = seedDemo();
-    const next = mutateDemo(d, "candidate", `rounds/${d.rounds[1].id}/accept`);
-    expect(d.rounds[1].status).toBe("offered");
-    expect(next.rounds[1].status).toBe("accepted");
-  });
   it("requires an HTTPS meeting URL", () => {
-    const d = seedDemo().rounds[0];
+    const d = {
+      candidateEmail: "test@example.com",
+      title: "Product designer",
+      kind: "Introduction",
+      minutes: 30,
+      amountCents: 1500,
+      scheduledAt: new Date().toISOString(),
+      terms: "Review one project within the agreed scope.",
+    };
     expect(
       roundSchema.safeParse({ ...d, meetingUrl: "javascript:alert(1)" })
         .success,

@@ -22,7 +22,13 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+              "default-src 'self'; script-src 'self' 'unsafe-inline' https://checkout.razorpay.com" +
+              (process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "") +
+              "; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.razorpay.com; font-src 'self'; connect-src 'self' https://*.razorpay.com" +
+              (process.env.NODE_ENV === "development"
+                ? " ws://localhost:* ws://127.0.0.1:*"
+                : "") +
+              "; frame-src https://api.razorpay.com https://*.razorpay.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
           },
         ],
       },

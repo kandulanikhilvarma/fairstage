@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { Pool } from "pg";
 
@@ -13,7 +13,9 @@ async function migrate() {
     await client.query(
       "CREATE TABLE IF NOT EXISTS schema_migrations (name text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())",
     );
-    for (const name of ["001_initial.sql"]) {
+    for (const name of (await readdir(resolve("db")))
+      .filter((name) => /^\d+_.+\.sql$/.test(name))
+      .sort()) {
       const result = await client.query(
         "SELECT 1 FROM schema_migrations WHERE name=$1",
         [name],

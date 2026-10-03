@@ -1,57 +1,73 @@
 # Fairstage
 
 [![CI](https://github.com/kandulanikhilvarma/fairstage/actions/workflows/ci.yml/badge.svg)](https://github.com/kandulanikhilvarma/fairstage/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **Good interviews. Fair pay.**
 
-[Open the live demo](https://fairstage.vercel.app) · [Deployment record](docs/DEPLOYMENT.md)
+[Open Fairstage](https://fairstage.vercel.app) · [Deployment record](docs/DEPLOYMENT.md)
 
-Fairstage is an open-source app for paid interview rounds.
-Employers set a clear amount, duration, and scope.
+Fairstage helps employers pay people for interview time.
+Employers specify the amount, duration, and scope of each round.
 Candidates accept the terms before the employer funds the round.
-Both people confirm completion before payment release.
+Both people confirm completion before the provider transfers candidate pay.
 
-> Public pilot: demo mode. Fictional records. No real payments.
-> The live API needs the service accounts and checks in [the launch guide](docs/LAUNCH.md).
+Accounts and records use PostgreSQL.
+The app shows service availability from its configuration.
+An unavailable provider cannot create payment records or transfers.
+See [the launch guide](docs/LAUNCH.md) for service setup and acceptance checks.
 
 ## Product model
 
 Candidates keep completed-round pay regardless of the hire decision.
 The employer pays the platform fee. Candidates pay no platform fee.
-The app never deducts a first salary or creates a repayment debt.
+The app does not deduct wages or create a repayment debt.
 
-| Proposed round | Duration | Candidate pay |
+| Proposed USD round | Duration | Candidate pay |
 | --- | --- | --- |
 | Introduction | 30 minutes | $15 |
 | Skills interview | 60 minutes | $45 |
 | Work sample | 90 minutes | $90 |
 
-The Launch fee is 8% of candidate pay.
-A $45 round costs the employer $48.60 before applicable tax.
-The platform absorbs payment processing costs in this release.
-The product plan proposes Team and Scale cost models. The release has no paid subscriptions.
+The Launch plan has no monthly fee and an 8% platform fee.
+A $45 round has a $48.60 employer total before any applicable tax.
+Payment providers charge processing fees. A free account does not mean free payment processing. [Razorpay pricing](https://razorpay.com/pricing/).
+The release applies the Launch fee. Team and Scale prices remain proposals without subscription billing.
 
-The bonus calculator explores a credit against a separate signing bonus.
-The calculator does not create payroll instructions. Bonus terms also need local review.
+Employers can choose USD or INR for a role or round.
+INR uses approved Razorpay Route accounts.
+USD uses Stripe Connect only where Stripe approves the platform and transfer model.
+The app keeps currency totals separate. The app does not convert USD prices to INR.
+Provider approval determines the supported countries and payment methods.
+
+The bonus calculator shows a possible credit against a separate signing bonus.
+The calculator does not create payroll instructions. Bonus terms need local legal review.
 
 ## Features
 
-- Public site, pricing calculator, pay policy, and job board.
-- Employer and candidate workspaces with separate account roles.
-- Jobs, applications, round offers, acceptance, and completion records.
-- Stripe Connect account setup and employer Checkout.
-- Signed webhooks, replay protection, row locks, and provider idempotency keys.
-- Payment ledger, CSV export, disputes, and audit events.
+- Public prices, pay policy, job search, and two interview templates.
+- Google sign-in, email sign-in links, and password accounts.
+- Separate employer and candidate workspaces with server sessions.
+- Profiles with skills, portfolio links, resume links, and time zones.
+- Role publication, applications, applicant search, and manual application states.
+- Round offers, acceptance, calendar downloads, and private notes.
+- Razorpay Checkout and approved Route transfers for INR rounds.
+- Stripe Checkout and connected account setup for USD rounds.
+- Signed webhooks, event replay protection, ownership checks, and row locks.
+- Payment records, currency-aware CSV export, account export, and disputes.
 - Email verification and password reset through Resend.
-- Optional OpenAI-compatible adapter for an open-weight model.
-- Local interview preparation guide without an external model.
-- Mobile layouts, keyboard focus, reduced motion, and accessibility checks.
+- Optional open-weight AI service with explicit consent.
+- Local interview preparation without an external model.
+- Responsive layouts, visible controls, keyboard focus, and reduced motion.
 
-The release does not include SSO, team seats, calendar sync, ATS sync, or automatic dispute resolution.
-See [the roadmap](docs/ROADMAP.md) for later work.
+Google sign-in needs OAuth credentials.
+Email links need a verified sender.
+Payment setup needs approved merchant accounts and candidate verification.
+The interface keeps unavailable actions separate from completed transactions.
 
-## Quick start
+The release has no team seats, calendar sync, ATS sync, or automatic dispute decisions.
+See [the roadmap](docs/ROADMAP.md) for later features and their acceptance gates.
+
+## Local setup
 
 Use Node.js 22 and npm 10 or later.
 
@@ -59,33 +75,41 @@ Use Node.js 22 and npm 10 or later.
 git clone https://github.com/kandulanikhilvarma/fairstage.git
 cd fairstage
 npm ci
-npm run dev
 ```
-
-Open `http://localhost:3000`.
-Demo mode works without credentials or a database.
-Switch roles in the workspace to test both sides.
-Use Reset demo to restore the fictional records.
-
-## Live setup
 
 1. Copy `.env.example` to `.env.local`.
 2. Start PostgreSQL with `docker compose up -d`.
-3. Set the database URL and exact app URL.
-4. Run the migration with the environment file.
-5. Set `DEMO_MODE=false`.
-6. Set the email service and Stripe test credentials.
-7. Complete [the launch checks](docs/LAUNCH.md).
+3. Set `DATABASE_URL` for the local database.
+4. Set `APP_URL` to `http://localhost:3000`.
+5. Apply the migrations.
+6. Start the development server.
 
 ```sh
 node --env-file=.env.local --import tsx scripts/migrate.ts
 npm run dev
 ```
 
-`LIVE_PAYMENTS_ENABLED=false` blocks money movement by default.
-Only enable payments after a successful Stripe test-account review.
-The owner must choose an operating company and supported countries.
+Open `http://localhost:3000`.
+Create a candidate or employer account with an email address and a password.
+Email verification and external sign-in methods need their service credentials.
+The preparation guide works without a model account.
+The examples page explains two round formats without account data.
+
+## Production configuration
+
+The app needs a managed PostgreSQL database and an exact `APP_URL`.
+The deployment keeps server credentials outside the repository.
+Google, Resend, Razorpay, Stripe, and the model endpoint have separate credentials.
+
+Both payment flags start disabled.
+Enable each provider only after its acceptance checks pass.
+Razorpay Route also needs merchant approval and verified linked accounts.
+Stripe India does not support this release's separate charges and transfers.
+Keep USD payments disabled for the India operator. [Stripe India marketplace limits](https://support.stripe.com/questions/stripe-india-support-for-marketplaces).
+Production Stripe actions need an approved platform country outside India and explicit approval of the funds flow.
+
 Global product scope does not imply global payment coverage.
+Follow [the launch guide](docs/LAUNCH.md) before the commercial pilot.
 
 ## Verification
 
@@ -95,49 +119,54 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Unit tests check prices, validation, password hashes, and demo state changes.
-API tests use an actual PostgreSQL engine through PGlite and a mocked payment provider.
-They check ownership, transactions, event replay, and failure recovery.
-Browser tests check round flows, applications, exports, accessibility, and viewport fit.
-GitHub CI also applies the migration to PostgreSQL 17.
+Unit tests check prices, validation, and password security.
+API tests use PostgreSQL through PGlite with mocked providers.
+Auth tests check real RSA signatures against test keys.
+Browser tests use isolated accounts and a local database.
+GitHub CI also applies the migrations to PostgreSQL 17.
 
-Mocked provider tests do not prove that a commercial Stripe account can process payments.
-Live account, payout, refund, and dispute checks remain part of launch approval.
+Automated provider tests do not establish commercial payment approval.
+Record real service acceptance separately in [the evaluation](docs/EVALUATION.md).
 
 ## Architecture
 
 ```mermaid
 flowchart LR
     B["Browser"] --> N["Next.js pages and API"]
-    B --> D["Demo browser storage"]
     N --> P["PostgreSQL"]
+    B --> G["Google sign-in"]
+    G --> N
+    N --> R["Razorpay Checkout and Route"]
     N --> S["Stripe Checkout and Connect"]
-    S --> W["Signed webhook route"]
+    R --> W["Signed webhook routes"]
+    S --> W
     W --> P
     N --> E["Resend email"]
     N --> A["Optional model endpoint"]
 ```
 
-See [architecture](docs/ARCHITECTURE.md), [API](docs/API.md), and [money rules](docs/MONEY.md) for details.
+See [architecture](docs/ARCHITECTURE.md), [API](docs/API.md), and [money rules](docs/MONEY.md) for implementation details.
 
 ## Documentation
 
 | Guide | Purpose |
 | --- | --- |
-| [Product plan](docs/PLAN.md) | Scope, pilot prices, and delivery stages |
-| [Design system](DESIGN.md) | Brand tokens, type, layout, and component rules |
-| [Money rules](docs/MONEY.md) | Fees, payment states, refunds, and recovery limits |
-| [Launch guide](docs/LAUNCH.md) | Service accounts and acceptance checks |
+| [Product plan](docs/PLAN.md) | Scope, prices, and release steps |
+| [Design system](DESIGN.md) | Brand tokens, type, layouts, and controls |
+| [Money rules](docs/MONEY.md) | Fees, payment states, refunds, and provider limits |
+| [Launch guide](docs/LAUNCH.md) | Credentials, approval, and service checks |
 | [Operator guide](docs/OPERATIONS.md) | Disputes, backups, incidents, and privacy requests |
-| [AI guide](docs/AI.md) | Open-weight model adapter and consent |
-| [Roadmap](docs/ROADMAP.md) | Future features with release gates |
-| [Evaluation](docs/EVALUATION.md) | Actual checks and known limits |
+| [AI guide](docs/AI.md) | Model adapter, data scope, and consent |
+| [Roadmap](docs/ROADMAP.md) | Later features and release gates |
+| [Evaluation](docs/EVALUATION.md) | Verified results and pending checks |
+| [Deployment](docs/DEPLOYMENT.md) | Production source and public-domain checks |
 
-## License
+## Source and rights
 
-The code uses the [MIT License](LICENSE).
-Model weights, payment services, and third-party packages keep their own licenses and terms.
-The Fairstage name has no trademark clearance yet.
+The repository exposes the source and product rules for review.
+The current release does not include a project license file.
+Confirm source reuse rights with the repository owner.
+Dependencies, model weights, and external services keep their respective licenses and terms.
 
 ---
 

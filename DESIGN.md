@@ -16,8 +16,8 @@ colors:
   on-blue-muted: "#e7ebff"
   workspace-bg: "#f7f8fc"
   pale-surface: "#fafbfe"
-  field-line: "#c4ccdc"
-  focus: "#7888ff"
+  field-line: "#78849c"
+  focus: "#273bd7"
 typography:
   display:
     fontFamily: "Manrope, sans-serif"
@@ -221,6 +221,10 @@ Panels clip content at their corners. Table wrappers permit horizontal scroll.
 ### Inputs / Fields
 
 Fields use white backgrounds and a thin field-line border. Their minimum height is 46px.
+Buttons and tabs have a minimum touch target of 44px.
+Disabled buttons use distinct borders and readable text.
+Selected tabs use the blue surface with white text.
+
 Labels sit above their fields. Hint text uses the muted color.
 Keyboard focus uses a 3px outline with a 4px offset. Error notices use red text and pale red backgrounds.
 
@@ -245,7 +249,7 @@ Small screens reduce row padding and circle size without removal of the amounts.
 - **Do** pair state colors with text labels.
 - **Do** keep keyboard focus visible.
 - **Do** honor the reduced-motion preference.
-- **Do** keep demo labels beside fictional data.
+- **Do** keep template examples separate from account records.
 
 ### Do not:
 

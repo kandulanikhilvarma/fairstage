@@ -3,66 +3,100 @@
 ## The offer
 
 Fairstage helps employers pay people for interview time.
-Each round has a fixed amount, a duration, and clear terms.
-Candidates keep the amount after a completed round, even if the employer rejects them.
+Each round has a fixed amount, duration, and scope.
+Candidates accept the terms before the employer funds the round.
+Candidates keep pay after a completed round regardless of the hire decision.
 
-## Pilot prices
+The product serves candidates and employers through separate accounts.
+Real records use PostgreSQL and server sessions.
+Google sign-in and email links reduce the need for passwords.
+A password account remains available as an alternative.
 
-The plan proposes these prices. The prices are not commercial terms.
+## Proposed prices
 
-| Round | Time | Candidate pay |
+The global product plan proposes USD prices.
+The operator must approve commercial terms before a paid launch.
+
+| Round | Duration | Proposed candidate pay |
 | --- | --- | --- |
 | Introduction | 30 minutes | $15 |
 | Skills interview | 60 minutes | $45 |
 | Work sample | 90 minutes | $90 |
 
-The employer can choose a higher amount.
-The product limits a work sample to the agreed scope.
-An employer cannot use a candidate work sample as unpaid client work.
+Employers can choose a higher amount.
+The round terms define the work sample scope.
+The product policy excludes unpaid client work.
 
 | Plan | Monthly fee | Platform fee |
 | --- | --- | --- |
 | Launch | $0 | 8% of candidate pay |
-| Team | $79 | 5% of candidate pay |
-| Scale | $249 | 3% of candidate pay |
+| Team | $79 proposal | 5% proposal |
+| Scale | $249 proposal | 3% proposal |
 
-The platform absorbs payment processing costs in this release. Applicable taxes need a separate launch review.
+The release applies the Launch fee only.
 Candidates pay no platform fee.
-The first release applies the Launch fee only. Paid subscriptions need a later billing release.
+Payment providers charge processing fees independently of account fees.
+Team and Scale need a separate subscription release.
+
+The app supports INR amounts for an approved Razorpay Route workflow.
+Employers choose INR amounts directly; the app does not apply exchange rates.
+USD rounds use an approved Stripe platform.
+The operator must check provider eligibility and candidate country support.
+
+## Interview formats
+
+The examples page contains two reusable formats.
+An introduction covers experience, the role, and candidate questions in 30 minutes.
+A skills interview covers one permitted project and a role-specific scenario in 60 minutes.
+Employers set the amount and schedule before the candidate accepts either format.
+
+## Account and information features
+
+Profiles include a headline, skills, work links, and a time zone.
+Employer workspaces expose applicant information for their own jobs.
+Candidates can track or withdraw their own applications.
+Employers can set review, interview, offer, hire, and rejection states.
+No model score selects an applicant.
+
+Interview participants can download calendar files and save private notes.
+Payment CSV files include the currency of each event.
+Account exports include authorized account and interview records.
+The local preparation guide works without an external model.
 
 ## Salary recovery
 
-The original proposal treats interview pay as an advance against the first salary.
-Salary recovery needs local legal review. Consent alone does not establish a lawful deduction.
-The app does not deduct wages, request repayments, or export payroll deductions.
-The default is unconditional interview pay.
+The original idea treats interview pay as an advance against the first salary.
+The release excludes salary deductions and repayment debt.
+Local legal review must precede any change to that rule.
+Consent alone does not establish a lawful wage deduction.
 
-The calculator can show a proposed credit against a separate signing bonus.
-The bonus proposal does not reduce the base salary.
+The calculator shows a possible credit against a separate signing bonus.
+The credit cannot exceed interview pay or the separate bonus.
+The calculator does not reduce base salary or issue payroll instructions.
 
-## Delivery steps
+## Release steps
 
-1. Record the product rules. Check the price formulas and policy boundaries.
-2. Choose the brand and page structure. Check the candidate and employer paths.
-3. Build the public site and demo workspace. Check all visible actions.
-4. Build the live API and database schema. Test roles, ownership, and money states.
-5. Add Stripe interfaces and the AI assistant. Test failure states and webhook replay.
-6. Add setup guides and CI. Run type checks, tests, lint, and the production build.
-7. Publish the public repository. Read back its state and CI results.
-8. Deploy to Vercel. Test the public URL and document launch limits.
+1. Define the pay policy and provider funds flow.
+2. Repair visual controls and access states.
+3. Add real accounts and ownership checks.
+4. Add richer profiles and application controls.
+5. Add provider integrations and failure recovery.
+6. Test accounts, records, exports, and payment transitions.
+7. Check the exact source commit through CI.
+8. Deploy the verified source to Vercel.
+9. Check the public domain and service readiness.
+10. Record results in the evaluation and deployment guides.
 
-## Release boundaries
+## Commercial acceptance
 
-The first release includes jobs, applications, rounds, payment records, disputes, and preparation tools.
-Calendar sync, ATS sync, SSO, and paid subscription billing are later releases.
-
-The public demo uses browser storage. The demo cannot move money or send messages.
-The live service uses PostgreSQL and server sessions.
-Stripe credentials enable checkout and Connect account setup.
-Transfers need both a completed round and a verified candidate account.
+Merchant activation and provider approval remain separate from code delivery.
+Google and email methods need owner credentials.
+Candidate payment accounts need provider approval.
+The owner must approve countries, contracts, taxes, and support procedures.
+Use [the launch guide](LAUNCH.md) to record those checks.
 
 ## Success measures
 
-Measure candidate acceptance, completed rounds, time to payment, and disputes.
-Compare employer costs with interview completion and candidate feedback.
+Measure candidate acceptance, completed rounds, time to transfer, and disputes.
+Compare employer cost with completion and candidate feedback.
 Do not claim a result before the pilot produces data.

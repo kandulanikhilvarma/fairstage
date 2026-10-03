@@ -8,12 +8,11 @@ import {
   Code2,
   ArrowUpRight,
 } from "lucide-react";
-import { DemoNotice, PublicShell } from "@/components/site";
+import { PublicShell } from "@/components/site";
 import { defaults, money } from "@/lib/domain";
 export default function Home() {
   return (
     <PublicShell>
-      <DemoNotice />
       <section className="hero">
         <div className="container hero-grid">
           <div className="hero-copy">
@@ -27,8 +26,8 @@ export default function Home() {
               before you give your time.
             </p>
             <div className="hero-actions">
-              <Link className="button lime" href="/workspace">
-                Explore the demo <ArrowRight size={20} />
+              <Link className="button lime" href="/account?role=employer">
+                Start a fair round <ArrowRight size={20} />
               </Link>
               <Link className="text-link on-blue" href="/how-it-works">
                 See how it works <ArrowUpRight size={17} />
@@ -88,7 +87,7 @@ export default function Home() {
               Set a budget for every round. Give candidates clear terms and a
               reason to commit.
             </p>
-            <Link className="button dark" href="/workspace">
+            <Link className="button dark" href="/account?role=employer">
               Open employer workspace <ArrowRight size={18} />
             </Link>
           </div>
@@ -102,7 +101,7 @@ export default function Home() {
               See the amount up front. Track your rounds, review the terms, and
               keep a record of your pay.
             </p>
-            <Link className="button secondary" href="/workspace?role=candidate">
+            <Link className="button secondary" href="/account?role=candidate">
               Open candidate workspace <ArrowRight size={18} />
             </Link>
           </div>
@@ -149,7 +148,7 @@ export default function Home() {
             <h2>
               The rules are open.
               <br />
-              So is the code.
+              So are the costs.
             </h2>
             <p>
               Transparent fees. A public money model. An optional AI assistant
@@ -164,11 +163,11 @@ export default function Home() {
       <section className="container closing">
         <h2>Start with a fair round.</h2>
         <p>
-          Try both sides of the process. The demo runs with fictional data and
-          cannot move money.
+          Choose your account. Set clear terms and track each paid round from
+          offer to completion.
         </p>
-        <Link href="/workspace" className="button">
-          Try Fairstage <ArrowRight size={18} />
+        <Link href="/account" className="button">
+          Get started <ArrowRight size={18} />
         </Link>
       </section>
     </PublicShell>

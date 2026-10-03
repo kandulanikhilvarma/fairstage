@@ -12,21 +12,269 @@ import {
 import { useApp, api } from "./provider";
 import { JobsBoard } from "./jobs";
 import { Heading, Stat } from "./workspace";
-import { dateLabel, defaults, money } from "@/lib/domain";
+import {
+  dateLabel,
+  defaults,
+  money,
+  type Application,
+  type Currency,
+  type Role,
+} from "@/lib/domain";
 import { preparationGuide } from "@/lib/preparation";
 import { csvCell } from "@/lib/export";
 
+const applicationStatuses = [
+  ["reviewing", "Reviewing"],
+  ["interviewing", "Interviewing"],
+  ["offered", "Offer sent"],
+  ["hired", "Hired"],
+  ["rejected", "Not selected"],
+] as const;
+
+function profileLink(value?: string) {
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && !url.username && !url.password
+      ? value
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function ApplicationsList({
+  applications,
+  role,
+  busy,
+  update,
+}: {
+  applications: Application[];
+  role: Role;
+  busy: string;
+  update: (id: string, status: string) => Promise<void>;
+}) {
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("all");
+  const filtered = applications.filter((a) => {
+    const words = [
+      a.candidateName,
+      a.email,
+      a.jobTitle,
+      a.headline,
+      a.note,
+      ...(a.skills ?? []),
+    ]
+      .join(" ")
+      .toLowerCase();
+    return (
+      (status === "all" || a.status === status) &&
+      words.includes(search.trim().toLowerCase())
+    );
+  });
+  return (
+    <section className="panel">
+      <div className="panel-heading">
+        <h2>
+          {role === "employer" ? "Candidate applications" : "Your applications"}
+        </h2>
+        {role === "employer" && (
+          <Link href="/workspace/interviews" className="text-link">
+            Offer a round <ArrowRight size={15} />
+          </Link>
+        )}
+      </div>
+      <div className="panel-body">
+        <div className="field-row">
+          <div className="field">
+            <label htmlFor="application-search">Search applications</label>
+            <input
+              id="application-search"
+              type="search"
+              value={search}
+              maxLength={200}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={
+                role === "employer"
+                  ? "Name, role, or skill"
+                  : "Role or application note"
+              }
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="application-filter">Application state</label>
+            <select
+              id="application-filter"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+            >
+              <option value="all">All states</option>
+              <option value="applied">Applied</option>
+              {applicationStatuses.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+              <option value="withdrawn">Withdrawn</option>
+            </select>
+          </div>
+        </div>
+        <p role="status">
+          {filtered.length} of {applications.length} applications
+        </p>
+        {!filtered.length && (
+          <p>
+            {applications.length
+              ? "No applications match these filters."
+              : "No applications yet. A submitted application will appear here."}
+          </p>
+        )}
+        {filtered.map((a) => (
+          <article
+            className="round-item"
+            key={a.id}
+            aria-labelledby={`application-${a.id}`}
+          >
+            <div className="panel-body" style={{ overflowWrap: "anywhere" }}>
+              <div
+                className="activity-row"
+                style={{ alignItems: "flex-start", flexWrap: "wrap" }}
+              >
+                <div style={{ minWidth: 0, flex: "1 1 180px" }}>
+                  <h3 id={`application-${a.id}`}>
+                    {role === "employer"
+                      ? a.candidateName
+                      : (a.jobTitle ?? "Your application")}
+                  </h3>
+                  {role === "employer" && (
+                    <p>
+                      {a.jobTitle ?? "Role application"}
+                      {a.headline && <> · {a.headline}</>}
+                    </p>
+                  )}
+                  <small>Applied {dateLabel(a.createdAt)}</small>
+                </div>
+                <span className={`status ${a.status}`}>{a.status}</span>
+              </div>
+              {role === "employer" && (
+                <>
+                  <p>
+                    <a
+                      href={`mailto:${a.email}`}
+                      className="text-link"
+                      style={{ display: "inline" }}
+                    >
+                      {a.email}
+                    </a>
+                  </p>
+                  {!!a.skills?.length && (
+                    <p>
+                      <strong>Skills:</strong> {a.skills.join(", ")}
+                    </p>
+                  )}
+                  <div className="form-actions">
+                    {profileLink(a.portfolioUrl) && (
+                      <a
+                        href={a.portfolioUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="button secondary small"
+                      >
+                        View portfolio <ArrowRight size={14} />
+                      </a>
+                    )}
+                    {profileLink(a.resumeUrl) && (
+                      <a
+                        href={a.resumeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="button secondary small"
+                      >
+                        View resume <ArrowRight size={14} />
+                      </a>
+                    )}
+                  </div>
+                </>
+              )}
+              <details>
+                <summary>Application note</summary>
+                <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+                  {a.note}
+                </p>
+              </details>
+              {role === "employer" && a.status !== "withdrawn" && (
+                <form
+                  key={`${a.id}-${a.status}`}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const input = new FormData(e.currentTarget);
+                    void update(a.id, String(input.get("status")));
+                  }}
+                >
+                  <div className="field">
+                    <label htmlFor={`application-status-${a.id}`}>
+                      Application status for {a.candidateName}
+                    </label>
+                    <select
+                      id={`application-status-${a.id}`}
+                      name="status"
+                      defaultValue={
+                        a.status === "applied" ? "reviewing" : a.status
+                      }
+                      disabled={!!busy}
+                    >
+                      {applicationStatuses.map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <button className="button secondary small" disabled={!!busy}>
+                    {busy === a.id
+                      ? "Update application…"
+                      : "Update application"}
+                  </button>
+                </form>
+              )}
+              {role === "candidate" &&
+                !["hired", "withdrawn"].includes(a.status) && (
+                  <div className="form-actions">
+                    <button
+                      className="button secondary small"
+                      disabled={!!busy}
+                      onClick={() => void update(a.id, "withdrawn")}
+                    >
+                      {busy === a.id
+                        ? "Withdraw application…"
+                        : "Withdraw application"}
+                    </button>
+                  </div>
+                )}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function WorkspaceJobs() {
-  const { workspace: w, role, mutate } = useApp();
+  const { workspace: w, role, mutate, config } = useApp();
   const [form, setForm] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [applicationBusy, setApplicationBusy] = useState("");
+  const [closing, setClosing] = useState("");
+  const [jobCurrency, setJobCurrency] = useState<Currency>();
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const currency = jobCurrency ?? config.currency;
   if (!w) return null;
   async function create(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy(true);
     setError("");
+    setMessage("");
     const d = Object.fromEntries(new FormData(e.currentTarget));
     try {
       await mutate("jobs", {
@@ -44,12 +292,35 @@ export function WorkspaceJobs() {
     }
   }
   async function close(id: string) {
+    setClosing(id);
     setError("");
+    setMessage("");
     try {
       await mutate(`jobs/${id}/close`);
       setMessage("Job closed.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "The job could not close.");
+    } finally {
+      setClosing("");
+    }
+  }
+  async function updateApplication(id: string, status: string) {
+    setApplicationBusy(id);
+    setError("");
+    setMessage("");
+    try {
+      await mutate(`applications/${id}/status`, { status });
+      setMessage(
+        status === "withdrawn"
+          ? "Application withdrawn."
+          : "Application updated.",
+      );
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "The application could not update.",
+      );
+    } finally {
+      setApplicationBusy("");
     }
   }
   return (
@@ -136,24 +407,42 @@ export function WorkspaceJobs() {
             </div>
             <div className="field-row">
               <div className="field">
-                <label htmlFor="job-min">Minimum annual salary · USD</label>
+                <label htmlFor="job-currency">Salary currency</label>
+                <select
+                  id="job-currency"
+                  name="currency"
+                  value={currency}
+                  onChange={(e) => setJobCurrency(e.target.value as Currency)}
+                >
+                  <option value="INR">INR · Indian rupee</option>
+                  <option value="USD">USD · US dollar</option>
+                </select>
+              </div>
+            </div>
+            <div className="field-row">
+              <div className="field">
+                <label htmlFor="job-min">
+                  Minimum annual salary · {currency}
+                </label>
                 <input
                   id="job-min"
                   name="salaryMin"
                   type="number"
                   min={0}
-                  max={1000000}
+                  max={100000000}
                   required
                 />
               </div>
               <div className="field">
-                <label htmlFor="job-max">Maximum annual salary · USD</label>
+                <label htmlFor="job-max">
+                  Maximum annual salary · {currency}
+                </label>
                 <input
                   id="job-max"
                   name="salaryMax"
                   type="number"
                   min={0}
-                  max={1000000}
+                  max={100000000}
                   required
                 />
               </div>
@@ -188,26 +477,12 @@ export function WorkspaceJobs() {
       {role === "candidate" ? (
         <>
           <JobsBoard />
-          <section className="panel" style={{ marginTop: 28 }}>
-            <div className="panel-heading">
-              <h2>Your applications</h2>
-            </div>
-            <div className="panel-body">
-              {w.applications.length ? (
-                w.applications.map((a) => (
-                  <div className="activity-row" key={a.id}>
-                    <div>
-                      <strong>{a.note.slice(0, 80)}</strong>
-                      <small>{dateLabel(a.createdAt)}</small>
-                    </div>
-                    <span className="status">{a.status}</span>
-                  </div>
-                ))
-              ) : (
-                <p>No applications yet. Explore an open role.</p>
-              )}
-            </div>
-          </section>
+          <ApplicationsList
+            applications={w.applications}
+            role={role}
+            busy={applicationBusy}
+            update={updateApplication}
+          />
         </>
       ) : (
         <>
@@ -224,13 +499,19 @@ export function WorkspaceJobs() {
                       <small>
                         {j.location} · {j.stages} paid rounds · {j.status}
                       </small>
+                      <small>
+                        {money(j.salaryMin * 100, j.currency ?? "USD")}–
+                        {money(j.salaryMax * 100, j.currency ?? "USD")} per year
+                        · {j.currency ?? "USD"}
+                      </small>
                     </div>
                     {j.status === "open" && (
                       <button
                         className="button secondary small"
                         onClick={() => void close(j.id)}
+                        disabled={!!closing}
                       >
-                        Close role
+                        {closing === j.id ? "Close role…" : "Close role"}
                       </button>
                     )}
                   </div>
@@ -243,45 +524,12 @@ export function WorkspaceJobs() {
               )}
             </div>
           </section>
-          <section className="panel">
-            <div className="panel-heading">
-              <h2>Candidate applications</h2>
-              <Link href="/workspace/interviews" className="text-link">
-                Offer a round <ArrowRight size={15} />
-              </Link>
-            </div>
-            {w.applications.length ? (
-              <div className="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th scope="col">Candidate</th>
-                      <th scope="col">Note</th>
-                      <th scope="col">State</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {w.applications.map((a) => (
-                      <tr key={a.id}>
-                        <td>
-                          <strong>{a.candidateName}</strong>
-                          <small>{a.email}</small>
-                        </td>
-                        <td>{a.note}</td>
-                        <td>
-                          <span className="status">{a.status}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="panel-body">
-                <p>No applications yet.</p>
-              </div>
-            )}
-          </section>
+          <ApplicationsList
+            applications={w.applications}
+            role={role}
+            busy={applicationBusy}
+            update={updateApplication}
+          />
         </>
       )}
     </>
@@ -292,12 +540,10 @@ export function WalletPage() {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   if (!w) return null;
-  const earned = w.rounds
-    .filter((r) => r.status === "paid")
-    .reduce((n, r) => n + r.amountCents, 0);
-  const funded = w.rounds
-    .filter((r) => ["funded", "completed"].includes(r.status))
-    .reduce((n, r) => n + r.amountCents, 0);
+  const currencies = Array.from(
+    new Set<Currency>(w.rounds.map((r) => r.currency ?? "USD")),
+  );
+  if (!currencies.length) currencies.push(config.currency);
   async function connect() {
     setBusy(true);
     setMessage("");
@@ -313,12 +559,15 @@ export function WalletPage() {
   function download() {
     if (!w) return;
     const rows = [
-      ["Date", "Event", "Round ID", "Amount USD"],
+      ["Date", "Event", "Round ID", "Amount", "Currency"],
       ...w.ledger.map((l) => [
         l.createdAt,
         l.type,
         l.roundId,
         (l.amountCents / 100).toFixed(2),
+        l.currency ??
+          w.rounds.find((r) => r.id === l.roundId)?.currency ??
+          "USD",
       ]),
     ];
     const csv = rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
@@ -337,34 +586,57 @@ export function WalletPage() {
         title={role === "employer" ? "Payment records" : "Your interview pay"}
         description="Follow the amount from funded round to connected account."
       >
-        <button className="button secondary" onClick={download}>
+        <button
+          className="button secondary"
+          onClick={download}
+          disabled={!w.ledger.length}
+        >
           <Download size={16} />
           Export CSV
         </button>
       </Heading>
-      <div className="stats">
-        <Stat
-          label="Candidate pay released"
-          value={money(earned)}
-          note="To connected accounts"
-        />
-        <Stat
-          label="Candidate pay funded"
-          value={money(funded)}
-          note="Completion or review pending"
-        />
-        <Stat
-          label="Candidate platform fee"
-          value="$0"
-          note="The employer pays the fee"
-        />
-      </div>
+      {currencies.map((currency) => (
+        <div className="stats" key={currency}>
+          <Stat
+            label={`Candidate pay released · ${currency}`}
+            value={money(
+              w.rounds
+                .filter(
+                  (r) =>
+                    r.status === "paid" && (r.currency ?? "USD") === currency,
+                )
+                .reduce((n, r) => n + r.amountCents, 0),
+              currency,
+            )}
+            note="Gross transfers before reversals"
+          />
+          <Stat
+            label={`Candidate pay funded · ${currency}`}
+            value={money(
+              w.rounds
+                .filter(
+                  (r) =>
+                    ["funded", "completed"].includes(r.status) &&
+                    (r.currency ?? "USD") === currency,
+                )
+                .reduce((n, r) => n + r.amountCents, 0),
+              currency,
+            )}
+            note="Completion or review pending"
+          />
+          <Stat
+            label={`Candidate platform fee · ${currency}`}
+            value={money(0, currency)}
+            note="The employer pays the fee"
+          />
+        </div>
+      ))}
       <div className="notice alert-space">
         <Info size={18} />
         <span>
-          {config.demo
-            ? "Demo amounts represent fictional activity. No card, bank account, or real balance exists."
-            : "Released means a transfer to the connected account. Stripe controls bank settlement. These records are not tax invoices."}
+          Released records show transfers to a provider account. The payment
+          provider controls bank settlement. Each currency has its own total.
+          These records are not tax invoices.
         </span>
       </div>
       {role === "candidate" && (
@@ -374,22 +646,65 @@ export function WalletPage() {
             <ShieldCheck size={19} />
           </div>
           <div className="panel-body">
-            <p>
-              {config.demo
-                ? "The demo does not collect bank or identity details. A live account uses Stripe&apos;s hosted setup."
-                : "Complete payment setup on Stripe. Your account country must match the pilot's supported countries."}
-            </p>
-            {!config.demo && (
-              <button
-                className="button"
-                onClick={() => void connect()}
-                disabled={busy}
-              >
-                {busy
-                  ? "Open payment setup…"
-                  : "Set up or update payment account"}
-                <ArrowRight size={16} />
-              </button>
+            {!w.user.verified && (
+              <div className="notice alert-space">
+                Verify your email in account settings before payment setup.
+              </div>
+            )}
+            {w.user.country === "IN" && (
+              <>
+                <h3>INR transfers</h3>
+                <p>
+                  <strong>
+                    {w.user.razorpayReady
+                      ? "Provider account verified"
+                      : "Provider account setup pending"}
+                  </strong>
+                </p>
+                <p>
+                  Your payout account is verified through Razorpay Route with
+                  support from the service operator. Bank and identity details
+                  go through the provider&apos;s onboarding process. Transfers
+                  become available after account approval.
+                </p>
+                {!config.razorpay && (
+                  <p>
+                    INR checkout is currently unavailable. Your payment records
+                    remain accessible.
+                  </p>
+                )}
+                <Link href="/policy" className="text-link">
+                  Payment setup and support <ArrowRight size={15} />
+                </Link>
+              </>
+            )}
+            {config.payments && (
+              <>
+                <h3>Stripe payment account</h3>
+                <p>
+                  {w.user.connectReady
+                    ? "Your connected account is ready for transfers."
+                    : w.user.connectId
+                      ? "Finish your provider verification to receive transfers."
+                      : "Set up a connected account on Stripe. Availability depends on your country and the operator&apos;s supported regions."}
+                </p>
+                <button
+                  className="button"
+                  onClick={() => void connect()}
+                  disabled={busy || !w.user.verified}
+                >
+                  {busy
+                    ? "Open payment setup…"
+                    : "Set up or update payment account"}
+                  <ArrowRight size={16} />
+                </button>
+              </>
+            )}
+            {!config.payments && w.user.country !== "IN" && (
+              <p>
+                Payment account setup is not available for your country yet. You
+                can still manage your profile and applications.
+              </p>
             )}
             {message && (
               <div
@@ -425,7 +740,19 @@ export function WalletPage() {
                       <strong>{l.type === "paid" ? "Released" : l.type}</strong>
                     </td>
                     <td>{dateLabel(l.createdAt)}</td>
-                    <td>{money(l.amountCents)}</td>
+                    <td>
+                      {money(
+                        l.amountCents,
+                        l.currency ??
+                          w.rounds.find((r) => r.id === l.roundId)?.currency ??
+                          "USD",
+                      )}{" "}
+                      <small>
+                        {l.currency ??
+                          w.rounds.find((r) => r.id === l.roundId)?.currency ??
+                          "USD"}
+                      </small>
+                    </td>
                     <td>
                       {w.rounds.find((r) => r.id === l.roundId)?.kind ||
                         l.roundId.slice(0, 8)}
@@ -449,29 +776,40 @@ export function WalletPage() {
   );
 }
 export function Profile() {
-  const { workspace: w, mutate, config, reset } = useApp();
+  const { workspace: w, mutate, config } = useApp();
   const [busy, setBusy] = useState(false);
+  const [action, setAction] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   if (!w) return null;
   async function save(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy(true);
+    setAction("save");
     setError("");
     setMessage("");
     const input = Object.fromEntries(new FormData(e.currentTarget));
     try {
-      await mutate("profile", input);
+      const skills = String(input.skills ?? "")
+        .split(",")
+        .map((skill) => skill.trim())
+        .filter(Boolean);
+      if (skills.length > 20 || skills.some((skill) => skill.length > 50))
+        throw new Error("Use up to 20 skills with at most 50 characters each.");
+      await mutate("profile", { ...input, skills });
       setMessage("Profile saved.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "The profile could not save.");
     } finally {
       setBusy(false);
+      setAction("");
     }
   }
   async function verify() {
     setBusy(true);
+    setAction("verify");
     setError("");
+    setMessage("");
     try {
       const r = await api<{ message: string }>("auth/verify-request", {});
       setMessage(r.message);
@@ -479,6 +817,34 @@ export function Profile() {
       setError(e instanceof Error ? e.message : "The email request failed.");
     } finally {
       setBusy(false);
+      setAction("");
+    }
+  }
+  async function exportAccount() {
+    setBusy(true);
+    setAction("export");
+    setError("");
+    setMessage("");
+    try {
+      const data = await api<Record<string, unknown>>("account/export");
+      const url = URL.createObjectURL(
+        new Blob([JSON.stringify(data, null, 2)], {
+          type: "application/json;charset=utf-8",
+        }),
+      );
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "fairstage-account-data.json";
+      link.click();
+      URL.revokeObjectURL(url);
+      setMessage("Account data downloaded. Keep this file private.");
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "The account data could not download.",
+      );
+    } finally {
+      setBusy(false);
+      setAction("");
     }
   }
   return (
@@ -523,6 +889,90 @@ export function Profile() {
             </div>
           </div>
           <div className="field">
+            <label htmlFor="profile-headline">Professional headline</label>
+            <input
+              id="profile-headline"
+              name="headline"
+              defaultValue={w.user.headline ?? ""}
+              maxLength={120}
+              placeholder="Your role, interests, or area of work"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="profile-skills">Skills (comma separated)</label>
+            <input
+              id="profile-skills"
+              name="skills"
+              defaultValue={w.user.skills?.join(", ") ?? ""}
+              maxLength={1038}
+              aria-describedby="profile-skills-help"
+              placeholder="Research, TypeScript, project planning"
+            />
+            <small id="profile-skills-help">
+              Up to 20 skills. Use at most 50 characters for each skill.
+            </small>
+          </div>
+          <div className="field-row">
+            <div className="field">
+              <label htmlFor="profile-portfolio">Portfolio URL</label>
+              <input
+                id="profile-portfolio"
+                name="portfolioUrl"
+                type="url"
+                pattern="https://.*"
+                defaultValue={w.user.portfolioUrl ?? ""}
+                maxLength={500}
+                placeholder="https://"
+              />
+              <small>
+                Optional. Share work that you have permission to show.
+              </small>
+            </div>
+            <div className="field">
+              <label htmlFor="profile-resume">Resume URL</label>
+              <input
+                id="profile-resume"
+                name="resumeUrl"
+                type="url"
+                pattern="https://.*"
+                defaultValue={w.user.resumeUrl ?? ""}
+                maxLength={500}
+                placeholder="https://"
+              />
+              <small>Optional. Check that employers can open this link.</small>
+            </div>
+          </div>
+          <div className="field">
+            <label htmlFor="profile-timezone">Time zone</label>
+            <input
+              id="profile-timezone"
+              name="timezone"
+              defaultValue={w.user.timezone ?? "Asia/Kolkata"}
+              list="profile-timezones"
+              required
+              maxLength={80}
+              aria-describedby="profile-timezone-help"
+            />
+            <datalist id="profile-timezones">
+              {[
+                "Asia/Kolkata",
+                "America/New_York",
+                "America/Los_Angeles",
+                "Europe/London",
+                "Europe/Berlin",
+                "Asia/Singapore",
+                "Asia/Tokyo",
+                "Australia/Sydney",
+                "UTC",
+              ].map((value) => (
+                <option key={value} value={value} />
+              ))}
+            </datalist>
+            <small id="profile-timezone-help">
+              Use an IANA time zone, such as Asia/Kolkata or Europe/London.
+            </small>
+          </div>
+          <div className="field">
             <label htmlFor="profile-country">Account country</label>
             <select
               id="profile-country"
@@ -557,7 +1007,7 @@ export function Profile() {
             />
           </div>
           <button className="button" disabled={busy}>
-            {busy ? "Save profile…" : "Save profile"}
+            {busy && action === "save" ? "Save profile…" : "Save profile"}
           </button>
         </form>
       </section>
@@ -569,26 +1019,39 @@ export function Profile() {
             ? "Verified"
             : "Verification required before payment use"}
         </p>
-        {!config.demo && !w.user.verified && (
+        {!w.user.verified && (
           <button
             className="button secondary"
-            disabled={busy}
+            disabled={busy || !config.email}
             onClick={() => void verify()}
           >
-            Send verification link
+            {busy && action === "verify"
+              ? "Send verification link…"
+              : "Send verification link"}
           </button>
         )}
-        {config.demo && (
-          <>
-            <p className="small-text muted">
-              Reset the fictional workspace to its starting state. All demo
-              changes in this browser will be removed.
-            </p>
-            <button className="button secondary" onClick={reset}>
-              Reset demo
-            </button>
-          </>
+        {!w.user.verified && !config.email && (
+          <p className="small-text muted">
+            Email verification is currently unavailable. Please try again later.
+          </p>
         )}
+      </section>
+      <section className="form-panel">
+        <h2>Your account data</h2>
+        <p className="muted small-text">
+          Download your profile, applications, and interview records as JSON.
+          The file contains personal information; store it securely.
+        </p>
+        <button
+          className="button secondary"
+          disabled={busy}
+          onClick={() => void exportAccount()}
+        >
+          <Download size={16} />
+          {busy && action === "export"
+            ? "Download account data…"
+            : "Download account data"}
+        </button>
       </section>
     </>
   );
@@ -608,11 +1071,17 @@ export function Preparation() {
     e.preventDefault();
     setBusy(true);
     setError("");
+    setOutput("");
+    setSource("");
     try {
-      if (config.demo) {
+      if (!config.ai) {
         setOutput(preparationGuide(topic, kind));
         setSource("Local preparation guide");
       } else {
+        if (!consent)
+          throw new Error(
+            "Confirm your consent before you send the topic to the AI service.",
+          );
         const r = await api<{ text: string; source: string }>("assistant", {
           topic,
           kind,
@@ -636,7 +1105,7 @@ export function Preparation() {
       <div className="notice alert-space">
         <Sparkles size={18} />
         <span>
-          {config.ai && !config.demo
+          {config.ai
             ? "An optional AI service can suggest questions. Review its output before use."
             : "This deployment uses a local guide. No topic goes to an AI provider."}
         </span>
@@ -671,7 +1140,7 @@ export function Preparation() {
               ))}
             </select>
           </div>
-          {config.ai && !config.demo && (
+          {config.ai && (
             <label className="checkbox">
               <input
                 type="checkbox"
@@ -705,7 +1174,7 @@ export function Preparation() {
   );
 }
 export function Analytics() {
-  const { workspace: w } = useApp();
+  const { workspace: w, config } = useApp();
   if (!w) return null;
   const states = [
     "offered",
@@ -717,11 +1186,16 @@ export function Analytics() {
     "cancelled",
   ];
   const released = w.rounds.filter((r) => r.status === "paid");
+  const currencies = Array.from(
+    new Set<Currency>(released.map((r) => r.currency ?? "USD")),
+  );
+  if (!currencies.length) currencies.push(config.currency);
+  const disputes = w.disputes.filter((d) => d.status === "open");
   return (
     <>
       <Heading
         title="A view of your process"
-        description="Actual workspace records. No predictions or candidate scores."
+        description="Track interview progress and review open issues."
       />
       <div className="stats">
         <Stat
@@ -734,11 +1208,19 @@ export function Analytics() {
           value={String(released.length)}
           note="Both people confirmed completion"
         />
-        <Stat
-          label="Pay released"
-          value={money(released.reduce((n, r) => n + r.amountCents, 0))}
-          note="Candidate amount only"
-        />
+        {currencies.map((currency) => (
+          <Stat
+            key={currency}
+            label={`Pay released · ${currency}`}
+            value={money(
+              released
+                .filter((r) => (r.currency ?? "USD") === currency)
+                .reduce((n, r) => n + r.amountCents, 0),
+              currency,
+            )}
+            note="Candidate amount before reversals"
+          />
+        ))}
       </div>
       <div className="grid-two">
         <section className="panel">
@@ -775,8 +1257,8 @@ export function Analytics() {
             <h2>Open disputes</h2>
           </div>
           <div className="panel-body">
-            {w.disputes.length ? (
-              w.disputes.map((d) => (
+            {disputes.length ? (
+              disputes.map((d) => (
                 <div className="activity-row" key={d.id}>
                   <div>
                     <strong>{d.reason}</strong>

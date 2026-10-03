@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -14,12 +14,11 @@ import {
   LoaderCircle,
   LogOut,
   Plus,
-  RotateCcw,
   Settings,
   Sparkles,
   Wallet,
 } from "lucide-react";
-import { Logo, DemoNotice } from "./site";
+import { Logo } from "./site";
 import { api, useApp } from "./provider";
 import { dateLabel, money, type Round } from "@/lib/domain";
 import { Interviews, NewRound } from "./rounds";
@@ -50,6 +49,7 @@ const routes = [
 ];
 export function WorkspaceApp() {
   const app = useApp();
+  const router = useRouter();
   const pathname = usePathname();
   const selected = routes.find((r) => r.href === pathname);
   const [newRound, setNewRound] = useState(false);
@@ -58,7 +58,9 @@ export function WorkspaceApp() {
   async function logout() {
     try {
       await api("auth/logout", {});
-      window.location.assign("/account");
+      app.clearSession();
+      router.replace("/account");
+      router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "The sign-out request failed.");
     }
@@ -110,42 +112,10 @@ export function WorkspaceApp() {
         <header className="workspace-topbar">
           <span>{selected?.name || "Workspace"}</span>
           <div className="topbar-right">
-            {app.config.demo ? (
-              <div
-                className="role-switch"
-                role="group"
-                aria-label="Demo workspace role"
-              >
-                <button
-                  className={app.role === "employer" ? "active" : ""}
-                  onClick={() => app.switchRole("employer")}
-                  aria-pressed={app.role === "employer"}
-                >
-                  Employer
-                </button>
-                <button
-                  className={app.role === "candidate" ? "active" : ""}
-                  onClick={() => app.switchRole("candidate")}
-                  aria-pressed={app.role === "candidate"}
-                >
-                  Candidate
-                </button>
-              </div>
-            ) : (
-              <span className="small-text muted">
-                {app.workspace?.user.email}
-              </span>
-            )}
-            {app.config.demo ? (
-              <button
-                className="icon-button"
-                onClick={app.reset}
-                aria-label="Reset demo"
-                title="Reset demo"
-              >
-                <RotateCcw size={17} />
-              </button>
-            ) : (
+            <span className="small-text muted">
+              {app.workspace?.user.email}
+            </span>
+            {app.workspace && (
               <button
                 className="icon-button"
                 onClick={() => void logout()}
@@ -163,7 +133,6 @@ export function WorkspaceApp() {
             </div>
           </div>
         </header>
-        <DemoNotice />
         <main id="main" className="workspace-content">
           {error && (
             <div role="alert" className="notice error alert-space">
@@ -282,14 +251,34 @@ export function Stat({
   );
 }
 function Overview() {
-  const { workspace: w, role } = useApp();
+  const { workspace: w, role, config } = useApp();
   if (!w) return null;
-  const paid = w.rounds
-    .filter((r) => r.status === "paid")
-    .reduce((s, r) => s + r.amountCents, 0);
-  const committed = w.rounds
-    .filter((r) => ["funded", "completed"].includes(r.status))
-    .reduce((s, r) => s + r.amountCents, 0);
+  const currencies = [...new Set(w.rounds.map((r) => r.currency || "USD"))];
+  if (!currencies.length) currencies.push(config.currency);
+  const paid = currencies
+    .map((c) =>
+      money(
+        w.rounds
+          .filter((r) => r.status === "paid" && (r.currency || "USD") === c)
+          .reduce((s, r) => s + r.amountCents, 0),
+        c,
+      ),
+    )
+    .join(" · ");
+  const committed = currencies
+    .map((c) =>
+      money(
+        w.rounds
+          .filter(
+            (r) =>
+              ["funded", "completed"].includes(r.status) &&
+              (r.currency || "USD") === c,
+          )
+          .reduce((s, r) => s + r.amountCents, 0),
+        c,
+      ),
+    )
+    .join(" · ");
   const active = w.rounds.filter(
     (r) => !["paid", "cancelled"].includes(r.status),
   );
@@ -317,12 +306,12 @@ function Overview() {
           label={
             role === "employer" ? "Candidate pay released" : "Pay released"
           }
-          value={money(paid)}
+          value={paid}
           note="To connected accounts"
         />
         <Stat
           label="Candidate pay funded"
-          value={money(committed)}
+          value={committed}
           note="Awaiting completion or release"
         />
         <Stat
@@ -364,7 +353,7 @@ function Overview() {
                     <td>{r.kind}</td>
                     <td>{dateLabel(r.scheduledAt)}</td>
                     <td>
-                      <strong>{money(r.amountCents)}</strong>
+                      <strong>{money(r.amountCents, r.currency)}</strong>
                     </td>
                     <td>
                       <Status round={r} />
@@ -400,7 +389,7 @@ function Overview() {
                     </strong>
                     <small>{dateLabel(l.createdAt)}</small>
                   </div>
-                  <strong>{money(l.amountCents)}</strong>
+                  <strong>{money(l.amountCents, l.currency)}</strong>
                 </div>
               ))
             ) : (

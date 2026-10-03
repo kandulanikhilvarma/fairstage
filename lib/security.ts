@@ -3,6 +3,7 @@ import { promisify } from "node:util";
 import { cookies } from "next/headers";
 import { query } from "./db";
 import type { User } from "./domain";
+import type { PoolClient } from "pg";
 
 const derive = promisify(scrypt);
 export class HttpError extends Error {
@@ -28,13 +29,21 @@ export async function verifyPassword(password: string, hash: string) {
   const actual = (await derive(password, salt, 64)) as Buffer;
   return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
-export async function createSession(userId: string) {
+export async function createSession(
+  userId: string,
+  db?: Pick<PoolClient, "query">,
+) {
   const token = randomBytes(32).toString("hex");
   const expires = new Date(Date.now() + 7 * 86400000);
-  await query(
-    "INSERT INTO sessions(token_hash,user_id,expires_at) VALUES($1,$2,$3)",
-    [tokenHash(token), userId, expires],
-  );
+  const values = [tokenHash(token), userId, expires];
+  const sql =
+    "INSERT INTO sessions(token_hash,user_id,expires_at) VALUES($1,$2,$3)";
+  if (db) await db.query(sql, values);
+  else
+    await query(
+      "INSERT INTO sessions(token_hash,user_id,expires_at) VALUES($1,$2,$3)",
+      values,
+    );
   (await cookies()).set("fs_session", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -48,7 +57,7 @@ export async function sessionUser(): Promise<User> {
   if (!token || !/^[a-f0-9]{64}$/.test(token))
     throw new HttpError(401, "Sign in to continue.");
   const [user] = await query<User & { id: string }>(
-    `SELECT u.id,u.name,u.email,u.role,u.company,u.bio,u.country,u.email_verified AS verified,u.connect_id AS "connectId" FROM users u JOIN sessions s ON s.user_id=u.id WHERE s.token_hash=$1 AND s.expires_at > now()`,
+    `SELECT u.id,u.name,u.email,u.role,u.company,u.bio,u.country,u.email_verified AS verified,u.connect_id AS "connectId",u.connect_ready AS "connectReady",u.razorpay_ready AS "razorpayReady",u.headline,u.skills,u.portfolio_url AS "portfolioUrl",u.resume_url AS "resumeUrl",u.timezone FROM users u JOIN sessions s ON s.user_id=u.id WHERE s.token_hash=$1 AND s.expires_at > now()`,
     [tokenHash(token)],
   );
   if (!user) throw new HttpError(401, "Your session expired. Sign in again.");
@@ -73,11 +82,38 @@ export async function rateLimit(key: string, limit: number, seconds: number) {
     throw new HttpError(429, "Too many requests. Try again later.");
 }
 export async function requestJson(request: Request) {
-  const body = await request.text();
-  if (body.length > 16000)
+  if (
+    request.headers
+      .get("content-type")
+      ?.split(";", 1)[0]
+      .trim()
+      .toLowerCase() !== "application/json"
+  )
+    throw new HttpError(415, "Use an application/json request.");
+  if (Number(request.headers.get("content-length")) > 16000)
     throw new HttpError(413, "The request is too large.");
+  const reader = request.body?.getReader();
+  if (!reader) throw new HttpError(400, "The request must contain valid JSON.");
+  const chunks: Uint8Array[] = [];
+  let length = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    length += value.byteLength;
+    if (length > 16000) {
+      await reader.cancel();
+      throw new HttpError(413, "The request is too large.");
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(length);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
   try {
-    return JSON.parse(body);
+    return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
   } catch {
     throw new HttpError(400, "The request must contain valid JSON.");
   }

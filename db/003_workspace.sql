@@ -1,0 +1,15 @@
+ALTER TABLE users ADD COLUMN IF NOT EXISTS headline text NOT NULL DEFAULT '';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS skills text[] NOT NULL DEFAULT '{}';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS portfolio_url text NOT NULL DEFAULT '';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS resume_url text NOT NULL DEFAULT '';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS timezone text NOT NULL DEFAULT 'Asia/Kolkata';
+ALTER TABLE users ALTER COLUMN country SET DEFAULT 'IN';
+ALTER TABLE rounds ADD COLUMN IF NOT EXISTS currency text NOT NULL DEFAULT 'USD' CHECK (currency IN ('USD','INR'));
+ALTER TABLE rounds ADD COLUMN IF NOT EXISTS payment_provider text NOT NULL DEFAULT 'stripe' CHECK (payment_provider IN ('stripe','razorpay'));
+ALTER TABLE rounds ADD COLUMN IF NOT EXISTS private_notes jsonb NOT NULL DEFAULT '{}';
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS currency text NOT NULL DEFAULT 'USD' CHECK (currency IN ('USD','INR'));
+ALTER TABLE applications ADD CONSTRAINT applications_status CHECK (status IN ('applied','reviewing','interviewing','offered','hired','rejected','withdrawn'));
+CREATE INDEX IF NOT EXISTS applications_candidate ON applications(candidate_id,created_at DESC);
+CREATE INDEX IF NOT EXISTS applications_job ON applications(job_id,created_at DESC);
+CREATE INDEX IF NOT EXISTS jobs_public ON jobs(status,created_at DESC);
+CREATE INDEX IF NOT EXISTS auth_tokens_expiry ON auth_tokens(expires_at);

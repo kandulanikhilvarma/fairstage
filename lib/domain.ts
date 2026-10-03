@@ -6,6 +6,7 @@ export const roundKinds = [
   "Work sample",
 ] as const;
 export type Role = "employer" | "candidate";
+export type Currency = "USD" | "INR";
 export type RoundStatus =
   | "offered"
   | "accepted"
@@ -24,6 +25,13 @@ export interface User {
   country: string;
   verified: boolean;
   connectId?: string;
+  connectReady?: boolean;
+  razorpayReady?: boolean;
+  headline?: string;
+  skills?: string[];
+  portfolioUrl?: string;
+  resumeUrl?: string;
+  timezone?: string;
 }
 export interface Job {
   id: string;
@@ -37,6 +45,7 @@ export interface Job {
   salaryMax: number;
   stages: number;
   status: "open" | "closed";
+  currency?: Currency;
   createdAt: string;
 }
 export interface Application {
@@ -48,6 +57,11 @@ export interface Application {
   note: string;
   status: string;
   createdAt: string;
+  jobTitle?: string;
+  headline?: string;
+  skills?: string[];
+  portfolioUrl?: string;
+  resumeUrl?: string;
 }
 export interface Round {
   id: string;
@@ -68,6 +82,8 @@ export interface Round {
   employerConfirmed: boolean;
   candidateConfirmed: boolean;
   createdAt: string;
+  currency?: Currency;
+  paymentProvider?: "stripe" | "razorpay";
 }
 export interface LedgerEntry {
   id: string;
@@ -75,6 +91,7 @@ export interface LedgerEntry {
   type: string;
   amountCents: number;
   createdAt: string;
+  currency?: Currency;
 }
 export interface Dispute {
   id: string;
@@ -108,7 +125,9 @@ export function quote(amountCents: number, bps = 800) {
     amountCents < 500 ||
     amountCents > 1000000
   )
-    throw new Error("The round amount must be between $5 and $10,000.");
+    throw new Error(
+      "The round amount must be between 5 and 10,000 currency units.",
+    );
   if (!Number.isSafeInteger(bps) || bps < 0 || bps > 10000)
     throw new Error("The fee rate is not valid.");
   const feeCents = Math.round((amountCents * bps) / 10000);
@@ -128,10 +147,10 @@ export function bonusCredit(interviewCents: number, bonusCents: number) {
     salaryDeductionCents: 0,
   };
 }
-export function money(cents: number) {
+export function money(cents: number, currency: Currency = "USD") {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
+    currency,
     maximumFractionDigits: cents % 100 ? 2 : 0,
   }).format(cents / 100);
 }
@@ -168,6 +187,38 @@ export const profileSchema = z.object({
   company: z.string().trim().max(100),
   bio: z.string().trim().max(2000),
   country: z.string().regex(/^[A-Z]{2}$/),
+  headline: z.string().trim().max(120).default(""),
+  skills: z.array(z.string().trim().min(1).max(50)).max(20).default([]),
+  portfolioUrl: z
+    .union([
+      z.literal(""),
+      z
+        .url()
+        .max(500)
+        .refine((s) => s.startsWith("https://"), "Use an HTTPS portfolio URL."),
+    ])
+    .default(""),
+  resumeUrl: z
+    .union([
+      z.literal(""),
+      z
+        .url()
+        .max(500)
+        .refine((s) => s.startsWith("https://"), "Use an HTTPS resume URL."),
+    ])
+    .default(""),
+  timezone: z
+    .string()
+    .max(80)
+    .refine((s) => {
+      try {
+        new Intl.DateTimeFormat("en", { timeZone: s });
+        return true;
+      } catch {
+        return false;
+      }
+    }, "Use a valid time zone.")
+    .default("Asia/Kolkata"),
 });
 export const jobSchema = z
   .object({
@@ -175,9 +226,10 @@ export const jobSchema = z
     location: z.string().trim().min(2).max(100),
     category: z.enum(["Engineering", "Design", "Product", "Operations"]),
     description: z.string().trim().min(30).max(8000),
-    salaryMin: z.number().int().min(0).max(1000000),
-    salaryMax: z.number().int().min(0).max(1000000),
+    salaryMin: z.number().int().min(0).max(100000000),
+    salaryMax: z.number().int().min(0).max(100000000),
     stages: z.number().int().min(1).max(5),
+    currency: z.enum(["USD", "INR"]).default("INR"),
   })
   .refine((d) => d.salaryMax >= d.salaryMin, {
     message: "The maximum salary must be at least the minimum salary.",
@@ -197,6 +249,7 @@ export const roundSchema = z.object({
     .max(500)
     .refine((s) => s.startsWith("https://"), "Use an HTTPS meeting URL."),
   terms: z.string().trim().min(20).max(3000),
+  currency: z.enum(["USD", "INR"]).default("USD"),
 });
 export function canTransition(status: RoundStatus, action: string, role: Role) {
   return (
