@@ -49,8 +49,23 @@ async function settle(page: Page, route: string) {
           "Sign-in is temporarily unavailable. Please try again later.",
         ),
       ).toBeVisible();
+    if (!e2eDatabaseUrl)
+      await expect(page.locator(".auth-form form button")).toBeDisabled();
   }
   await page.evaluate(() => document.fonts.ready);
+}
+
+async function browserWorkspace(page: Page) {
+  // Chromium sends Secure cookies on its trusted loopback origin. Playwright's
+  // API request client applies different HTTP cookie rules, so use the browser.
+  return page.evaluate(async () => {
+    const response = await fetch("/api/workspace", {
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+    const body: unknown = await response.json();
+    return { status: response.status, body };
+  });
 }
 
 test("public navigation and calls to action use production copy", async ({
@@ -478,20 +493,26 @@ test.describe("production workflows with an isolated local PostgreSQL database",
           .getByRole("button", { name: "Create account", exact: true })
           .click();
         await expect(page).toHaveURL(/\/workspace$/);
-        const response = await context.request.get("/api/workspace");
-        expect(response.ok()).toBe(true);
-        expect((await response.json()).user).toMatchObject({
-          email,
-          role,
-          verified: false,
+        expect(await context.cookies()).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              name: "fs_session",
+              httpOnly: true,
+              secure: true,
+              sameSite: "Lax",
+            }),
+          ]),
+        );
+        const response = await browserWorkspace(page);
+        expect(response.status).toBe(200);
+        expect(response.body).toMatchObject({
+          user: { email, role, verified: false },
         });
         await page
           .getByRole("button", { name: "Sign out", exact: true })
           .click();
         await expect(page).toHaveURL(/\/account$/);
-        expect((await context.request.get("/api/workspace")).status()).toBe(
-          401,
-        );
+        expect((await browserWorkspace(page)).status).toBe(401);
         await page.getByLabel("Email address", { exact: true }).fill(email);
         await page
           .getByLabel("Password", { exact: true })
@@ -509,10 +530,9 @@ test.describe("production workflows with an isolated local PostgreSQL database",
           .getByRole("button", { name: "Sign in", exact: true })
           .click();
         await expect(page).toHaveURL(/\/workspace$/);
-        expect(
-          (await (await context.request.get("/api/workspace")).json()).user
-            .role,
-        ).toBe(role);
+        const signedIn = await browserWorkspace(page);
+        expect(signedIn.status).toBe(200);
+        expect(signedIn.body).toMatchObject({ user: { email, role } });
       } finally {
         await context.close();
       }
@@ -546,7 +566,9 @@ test.describe("production workflows with an isolated local PostgreSQL database",
       await page
         .getByRole("button", { name: "Save profile", exact: true })
         .click();
-      await expect(page.getByRole("status")).toContainText("Profile saved.");
+      await expect(page.locator('.notice.success[role="status"]')).toHaveText(
+        "Profile saved.",
+      );
       await page.reload();
       await expect(page.getByLabel("Professional headline")).toHaveValue(
         "Accessibility engineer",
@@ -606,9 +628,9 @@ test.describe("production workflows with an isolated local PostgreSQL database",
       await employerPage
         .getByRole("button", { name: "Publish role", exact: true })
         .click();
-      await expect(employerPage.getByRole("status")).toContainText(
-        "Job saved.",
-      );
+      await expect(
+        employerPage.locator('.notice.success[role="status"]'),
+      ).toHaveText("Job saved.");
       await candidatePage.goto("/workspace/jobs");
       await candidatePage
         .getByLabel("Search jobs", { exact: true })
@@ -623,9 +645,9 @@ test.describe("production workflows with an isolated local PostgreSQL database",
       await job
         .getByRole("button", { name: "Send application", exact: true })
         .click();
-      await expect(candidatePage.getByRole("status")).toContainText(
-        "Application saved.",
-      );
+      await expect(
+        candidatePage.locator('.notice.success[role="status"]'),
+      ).toHaveText("Application saved.");
       await employerPage.reload();
       await employerPage
         .getByLabel(`Application status for ${candidate.name}`, { exact: true })
@@ -633,9 +655,9 @@ test.describe("production workflows with an isolated local PostgreSQL database",
       await employerPage
         .getByRole("button", { name: "Update application", exact: true })
         .click();
-      await expect(employerPage.getByRole("status")).toContainText(
-        "Application updated.",
-      );
+      await expect(
+        employerPage.locator('.notice.success[role="status"]'),
+      ).toHaveText("Application updated.");
       await candidatePage.reload();
       await expect(
         candidatePage.locator(".status").filter({ hasText: "interviewing" }),

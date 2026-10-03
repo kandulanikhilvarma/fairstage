@@ -224,6 +224,7 @@ Fields use white backgrounds and a thin field-line border. Their minimum height 
 Buttons and tabs have a minimum touch target of 44px.
 Disabled buttons use distinct borders and readable text.
 Selected tabs use the blue surface with white text.
+Button surface changes have no color fade, so labels keep their contrast during state changes.
 
 Labels sit above their fields. Hint text uses the muted color.
 Keyboard focus uses a 3px outline with a 4px offset. Error notices use red text and pale red backgrounds.
