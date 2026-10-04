@@ -223,7 +223,16 @@ export function NewRound({ onDone }: { onDone: () => void }) {
   );
 }
 export function Interviews() {
-  const { workspace: w, role, config, mutate, refresh } = useApp();
+  const {
+    workspace: w,
+    role,
+    config,
+    mutate,
+    refresh,
+    loadMore,
+    pageBusy,
+    pageErrors,
+  } = useApp();
   const [filter, setFilter] = useState("all");
   const [open, setOpen] = useState("");
   const [form, setForm] = useState(false);
@@ -531,6 +540,29 @@ export function Interviews() {
               ? "Offer a paid round to get started."
               : "Apply for a role or wait for an employer's round offer."}
           </p>
+        </div>
+      )}
+      {w.pages?.rounds && (
+        <div className="form-actions alert-space">
+          <p className="small-text muted" aria-live="polite">
+            {w.rounds.length} of {w.pages.rounds.total} rounds loaded. Filters
+            apply to loaded rounds.
+          </p>
+          {w.pages.rounds.nextCursor && (
+            <button
+              className="button secondary"
+              disabled={pageBusy.rounds}
+              aria-busy={pageBusy.rounds}
+              onClick={() => void loadMore("rounds")}
+            >
+              {pageBusy.rounds ? "Load rounds…" : "Load more rounds"}
+            </button>
+          )}
+          {pageErrors.rounds && (
+            <p className="notice error" role="alert">
+              {pageErrors.rounds}
+            </p>
+          )}
         </div>
       )}
     </>

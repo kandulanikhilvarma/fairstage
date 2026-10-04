@@ -22,11 +22,11 @@ Candidates keep completed-round pay regardless of the hire decision.
 The employer pays the platform fee. Candidates pay no platform fee.
 The app does not deduct wages or create a repayment debt.
 
-| Proposed USD round | Duration | Candidate pay |
-| --- | --- | --- |
-| Introduction | 30 minutes | $15 |
-| Skills interview | 60 minutes | $45 |
-| Work sample | 90 minutes | $90 |
+| Proposed USD round | Duration   | Candidate pay |
+| ------------------ | ---------- | ------------- |
+| Introduction       | 30 minutes | $15           |
+| Skills interview   | 60 minutes | $45           |
+| Work sample        | 90 minutes | $90           |
 
 The Launch plan has no monthly fee and an 8% platform fee.
 A $45 round has a $48.60 employer total before any applicable tax.
@@ -54,6 +54,9 @@ The calculator does not create payroll instructions. Bonus terms need local lega
 - Stripe Checkout and connected account setup for USD rounds.
 - Signed webhooks, event replay protection, ownership checks, and row locks.
 - Payment records, currency-aware CSV export, account export, and disputes.
+- Stable pagination and complete account totals beyond the first page.
+- Restricted operator review with audited notes and concurrent-edit checks.
+- Authenticated daily maintenance and a credential-free readiness report.
 - Email verification and password reset through Resend.
 - Optional open-weight AI service with explicit consent.
 - Local interview preparation without an external model.
@@ -66,6 +69,7 @@ The interface keeps unavailable actions separate from completed transactions.
 
 The release has no team seats, calendar sync, ATS sync, or automatic dispute decisions.
 See [the roadmap](docs/ROADMAP.md) for later features and their acceptance gates.
+See [the first-stage delivery](docs/FIRST_STAGE.md) for completed scope and deferred activation.
 
 ## Local setup
 
@@ -149,17 +153,17 @@ See [architecture](docs/ARCHITECTURE.md), [API](docs/API.md), and [money rules](
 
 ## Documentation
 
-| Guide | Purpose |
-| --- | --- |
-| [Product plan](docs/PLAN.md) | Scope, prices, and release steps |
-| [Design system](DESIGN.md) | Brand tokens, type, layouts, and controls |
-| [Money rules](docs/MONEY.md) | Fees, payment states, refunds, and provider limits |
-| [Launch guide](docs/LAUNCH.md) | Credentials, approval, and service checks |
+| Guide                                | Purpose                                            |
+| ------------------------------------ | -------------------------------------------------- |
+| [Product plan](docs/PLAN.md)         | Scope, prices, and release steps                   |
+| [Design system](DESIGN.md)           | Brand tokens, type, layouts, and controls          |
+| [Money rules](docs/MONEY.md)         | Fees, payment states, refunds, and provider limits |
+| [Launch guide](docs/LAUNCH.md)       | Credentials, approval, and service checks          |
 | [Operator guide](docs/OPERATIONS.md) | Disputes, backups, incidents, and privacy requests |
-| [AI guide](docs/AI.md) | Model adapter, data scope, and consent |
-| [Roadmap](docs/ROADMAP.md) | Later features and release gates |
-| [Evaluation](docs/EVALUATION.md) | Verified results and pending checks |
-| [Deployment](docs/DEPLOYMENT.md) | Production source and public-domain checks |
+| [AI guide](docs/AI.md)               | Model adapter, data scope, and consent             |
+| [Roadmap](docs/ROADMAP.md)           | Later features and release gates                   |
+| [Evaluation](docs/EVALUATION.md)     | Verified results and pending checks                |
+| [Deployment](docs/DEPLOYMENT.md)     | Production source and public-domain checks         |
 
 ## Source and rights
 

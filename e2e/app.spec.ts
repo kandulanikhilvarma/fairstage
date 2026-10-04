@@ -842,8 +842,12 @@ test.describe("production workflows with an isolated local PostgreSQL database",
         exact: true,
       });
       await expect(exportButton).toBeEnabled();
+      await expect(page.getByRole("table").locator("tbody tr")).toHaveCount(50);
+      await page
+        .getByRole("button", { name: "Load more payment events", exact: true })
+        .click();
       await expect(page.getByRole("table").locator("tbody tr")).toHaveCount(
-        200,
+        100,
       );
       const workspace = await browserWorkspace(page);
       expect(workspace.status).toBe(200);

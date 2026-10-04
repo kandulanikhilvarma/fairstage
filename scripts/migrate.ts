@@ -5,7 +5,11 @@ import { Pool } from "pg";
 async function migrate() {
   if (!process.env.DATABASE_URL)
     throw new Error("Set DATABASE_URL before you run the migration.");
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const pool = new Pool({
+    connectionString:
+      process.env.DATABASE_DIRECT_URL || process.env.DATABASE_URL,
+    connectionTimeoutMillis: 8000,
+  });
   const client = await pool.connect();
   try {
     await client.query("BEGIN");

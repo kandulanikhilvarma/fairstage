@@ -2,6 +2,27 @@
 
 ## Health and alerts
 
+The readiness command checks required configuration without credential values:
+
+```sh
+node --env-file=.env.local --import tsx scripts/check-readiness.ts --database --live
+```
+
+Use `DATABASE_DIRECT_URL` for migrations and schema checks when the provider supplies a direct connection.
+Use a pooled `DATABASE_URL` at runtime.
+The command returns exit code 1 when a required check fails.
+
+The daily maintenance route needs a random `CRON_SECRET` with at least 32 URL-safe characters.
+`vercel.json` schedules one daily run at 03:00 UTC.
+The job removes expired sessions, auth tokens, OAuth challenges, email links, and rate limits after a one-day grace period.
+Each table has a 1000-row limit per run.
+Repeated runs can drain a larger backlog.
+Permanent records and financial history remain intact.
+The operator health API shows the last successful or failed run.
+An absent secret denies every request.
+Verify an authorized run before account traffic.
+Alert on failed runs and a completion gap above 48 hours.
+
 Check `/api/health` for application and database availability.
 The endpoint returns 503 if the app cannot reach a configured database.
 Check `/api/config` for the configured action gates.
@@ -91,18 +112,28 @@ Record settlement failures through the restricted support process.
 
 ## Repair queues
 
-The audit table identifies review needs.
-The table has no automated case closure field.
-Record the resolution through the restricted case record and a new audit event.
-Keep the original event and ledger records.
+Open `/operator` through a verified account in the server's `OPERATOR_EMAILS` allowlist.
+The console lists participant disputes and provider repair signals.
+It also shows disputed provider rounds without a participant case.
+Filter the queue by kind and review state.
+Read the case and its audit notes before a decision.
+Save a review note with the current version.
+Reload a case after a version conflict.
 
-| Audit action | Required review |
-| --- | --- |
-| `transfer_reversal_pending` | Check the Stripe refund or lost dispute, connected balance, reversal total, and failed event. |
-| `razorpay_reversal_review` | Check the refund and prior transfer. Decide the approved provider reversal action. |
-| `razorpay_payment_review` | Check the payment dispute or failure. Keep release blocked until a documented decision. |
-| `razorpay_transfer_failed` | Check the provider transfer status, destination, feature approval, and available merchant balance. |
-| `checkout_payment_failed` | Check the Stripe payment state before a new Checkout generation. |
+Case closure records a review outcome only.
+It does not clear a participant dispute, change a round, release funds, or erase the original signal.
+The console has no corrective transfer or refund action.
+Use the approved provider process for financial corrections.
+Keep the original event and ledger records.
+Case events are append-only in the database.
+
+| Audit action                | Required review                                                                                    |
+| --------------------------- | -------------------------------------------------------------------------------------------------- |
+| `transfer_reversal_pending` | Check the Stripe refund or lost dispute, connected balance, reversal total, and failed event.      |
+| `razorpay_reversal_review`  | Check the refund and prior transfer. Decide the approved provider reversal action.                 |
+| `razorpay_payment_review`   | Check the payment dispute or failure. Keep release blocked until a documented decision.            |
+| `razorpay_transfer_failed`  | Check the provider transfer status, destination, feature approval, and available merchant balance. |
+| `checkout_payment_failed`   | Check the Stripe payment state before a new Checkout generation.                                   |
 
 Use this query through restricted database access to list review events:
 

@@ -18,7 +18,7 @@ Send `{}` to auth actions that have no input fields.
 | ------ | ------------- | ---------------------------------------------------------------------------------------------------------- |
 | GET    | `/api/config` | Flags for `accounts`, `payments`, `google`, `magic`, `email`, `razorpay`, and `ai`; the default `currency` |
 | GET    | `/api/health` | `status`, `mode: "production"`, and `version`; 200 for a database response, otherwise 503                  |
-| GET    | `/api/jobs`   | `{ jobs }` with at most 100 open roles, newest first                                                       |
+| GET    | `/api/jobs`   | `{ jobs, page }` with bounded open roles, newest first                                                     |
 
 `config` and `health` work without a database.
 Other routes need `DATABASE_URL`.
@@ -121,7 +121,28 @@ Connected payout country and time zone remain unchanged.
 | POST   | `/api/jobs/:id/apply`          | Verified candidate; `note` with 20 to 3000 characters; 201                           |
 | POST   | `/api/applications/:id/status` | Job owner changes status; candidate can withdraw their own application               |
 
-Workspace results include at most 200 rounds, applications, ledger entries, and disputes, plus 100 owned jobs.
+The interface requests `/api/workspace?pageSize=50`.
+The response includes `summary` and `pages` with the account collections.
+The server computes totals over the complete account history.
+The totals keep USD and INR separate.
+The authenticated `user.operator` flag exposes no allowlist addresses.
+
+`GET /api/workspace/:collection` returns `{ items, page: { nextCursor, total } }`.
+Valid collections are `rounds`, `jobs`, `applications`, `ledger`, and `disputes`.
+Use `pageSize` from 1 to 100 and the returned `cursor` for the next page.
+The default page size is 50.
+
+Optional `q` and `status` filters apply before the page limit.
+Use only a cursor from the same account, collection, and filters.
+Invalid cursors return 400.
+Timestamp and UUID order preserves records with equal timestamps.
+
+The legacy request without `pageSize` retains its previous caps for older clients.
+Those caps are 200 rounds, applications, ledger entries, and disputes, plus 100 owned jobs.
+The interface labels filters that apply only to loaded records.
+Applications and public roles also have server search across complete matching records.
+Public roles accept `pageSize`, `cursor`, `q`, and `category`.
+Signed-in candidates receive an `applied` flag without public employer account IDs.
 The account export has no row limit.
 The export includes `user`, `applications`, `rounds`, `jobs`, `ledger`, `disputes`, `privateNotes`, and `exportedAt`.
 The export omits password hashes and session tokens.
@@ -129,6 +150,50 @@ Only related records and the current account's private notes appear.
 
 The wallet downloads its complete CSV from `/api/ledger/export`.
 The export does not use the capped workspace ledger.
+
+## Restricted operator routes
+
+Every operator route needs a verified session and an exact address in `OPERATOR_EMAILS`.
+An absent or invalid allowlist grants no operator access.
+The write transaction checks the session again before the review.
+
+| Method | Route                           | Response or action                                                        |
+| ------ | ------------------------------- | ------------------------------------------------------------------------- |
+| GET    | `/api/operator/session`         | Operator identity and `financialActionsEnabled: false`                    |
+| GET    | `/api/operator/health`          | Case counts, provider event times, and latest maintenance result          |
+| GET    | `/api/operator/cases`           | `{ items, nextCursor }`; optional `kind`, `status`, `limit`, and `cursor` |
+| GET    | `/api/operator/cases/:kind/:id` | `{ case, notes, nextCursor }`; optional `limit` and `cursor` for notes    |
+| POST   | `/api/operator/cases/:kind/:id` | Review with `note`, `status`, `decision`, and `expectedVersion`           |
+
+Kinds are `dispute` and `repair`.
+The default limit is 25; permitted limits are 1 to 50.
+Review states are `open`, `in_review`, `waiting_provider`, and `closed`.
+Decisions are `pending`, `needs_information`, `provider_review`, and `no_action`.
+The API validates the permitted state and decision pairs.
+
+Notes contain 10 to 3000 characters.
+A stale version returns 409.
+Responses have `Cache-Control: no-store`.
+
+Review writes use the Origin, JSON body, and durable rate-limit checks.
+Each review adds an immutable case event and an audit event.
+Review closure leaves original dispute, round, and ledger states intact.
+
+## Scheduled maintenance
+
+`GET /api/internal/maintenance` needs `Authorization: Bearer CRON_SECRET`.
+The secret must contain 32 to 256 URL-safe characters.
+The endpoint denies unauthorized requests before database access.
+The daily Vercel schedule runs at 03:00 UTC.
+Vercel sends the configured secret in the Authorization header. [Vercel cron authentication](https://vercel.com/docs/cron-jobs/manage-cron-jobs).
+
+The transaction lock prevents overlapping cleanup runs.
+Each table has a 1000-row batch limit.
+The job removes expired temporary credentials and rate limits after a one-day grace period.
+It preserves permanent records and financial history.
+The database records counts and completion times in `operation_runs`.
+An overlapping run returns `status: skipped`.
+A database failure returns 503 without private error details.
 
 Profile input contains `name`, `company`, `bio`, and a two-letter uppercase `country`.
 Optional fields are `headline`, `skills`, `portfolioUrl`, `resumeUrl`, and `timezone`.

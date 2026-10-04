@@ -4,10 +4,16 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
-import type { Role, Workspace } from "@/lib/domain";
+import type {
+  RecordPage,
+  Role,
+  Workspace,
+  WorkspaceCollection,
+} from "@/lib/domain";
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -24,11 +30,9 @@ export async function api<T>(route: string, body?: unknown): Promise<T> {
     body: body === undefined ? undefined : JSON.stringify(body),
     signal: AbortSignal.timeout(20000),
   });
-  const result = await res
-    .json()
-    .catch(() => ({
-      error: "The service did not return a valid response. Try again.",
-    }));
+  const result = await res.json().catch(() => ({
+    error: "The service did not return a valid response. Try again.",
+  }));
   if (!res.ok)
     throw new ApiError(
       result.error || "The request failed. Try again.",
@@ -66,6 +70,9 @@ type Context = {
   ) => Promise<{ url?: string; checkout?: CheckoutDetails }>;
   refresh: () => Promise<void>;
   clearSession: () => void;
+  loadMore: (collection: WorkspaceCollection) => Promise<void>;
+  pageBusy: Partial<Record<WorkspaceCollection, boolean>>;
+  pageErrors: Partial<Record<WorkspaceCollection, string>>;
 };
 const context = createContext<Context | null>(null);
 const initialConfig: Config = {
@@ -83,18 +90,33 @@ export function Provider({ children }: { children: ReactNode }) {
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [pageBusy, setPageBusy] = useState<Context["pageBusy"]>({});
+  const [pageErrors, setPageErrors] = useState<Context["pageErrors"]>({});
+  const generation = useRef(0);
+  const pendingPages = useRef(new Set<WorkspaceCollection>());
   const refresh = useCallback(async () => {
+    const version = ++generation.current;
+    pendingPages.current.clear();
+    setPageBusy({});
+    setPageErrors({});
     try {
-      const data = await api<Workspace>("workspace");
+      const data = await api<Workspace>("workspace?pageSize=50");
+      if (version !== generation.current) return;
       setWorkspace(data);
       setError("");
     } catch (e) {
-      if (e instanceof ApiError && e.status === 401) setWorkspace(null);
+      if (
+        version === generation.current &&
+        e instanceof ApiError &&
+        e.status === 401
+      )
+        setWorkspace(null);
       throw e;
     }
   }, []);
   useEffect(() => {
     let active = true;
+    const version = generation.current;
     async function load() {
       try {
         const c = await api<Config>("config");
@@ -102,10 +124,14 @@ export function Provider({ children }: { children: ReactNode }) {
         setConfig(c);
         if (c.accounts) {
           try {
-            const data = await api<Workspace>("workspace");
-            if (active) setWorkspace(data);
+            const data = await api<Workspace>("workspace?pageSize=50");
+            if (active && version === generation.current) setWorkspace(data);
           } catch (e) {
-            if (active && (!(e instanceof ApiError) || e.status !== 401))
+            if (
+              active &&
+              version === generation.current &&
+              (!(e instanceof ApiError) || e.status !== 401)
+            )
               setError(
                 e instanceof Error
                   ? e.message
@@ -127,6 +153,54 @@ export function Provider({ children }: { children: ReactNode }) {
       active = false;
     };
   }, []);
+  const loadMore = async (collection: WorkspaceCollection) => {
+    const cursor = workspace?.pages?.[collection]?.nextCursor;
+    if (!workspace || !cursor || pendingPages.current.has(collection)) return;
+    const version = generation.current;
+    const userId = workspace.user.id;
+    pendingPages.current.add(collection);
+    setPageBusy((current) => ({ ...current, [collection]: true }));
+    setPageErrors((current) => ({ ...current, [collection]: "" }));
+    try {
+      const result = await api<
+        RecordPage<Workspace[typeof collection][number]>
+      >(
+        `workspace/${collection}?pageSize=50&cursor=${encodeURIComponent(cursor)}`,
+      );
+      if (version !== generation.current) return;
+      setWorkspace((current) => {
+        if (
+          !current ||
+          current.user.id !== userId ||
+          current.pages?.[collection].nextCursor !== cursor
+        )
+          return current;
+        const ids = new Set(current[collection].map((item) => item.id));
+        return {
+          ...current,
+          [collection]: [
+            ...current[collection],
+            ...result.items.filter((item) => !ids.has(item.id)),
+          ],
+          pages: { ...current.pages, [collection]: result.page },
+        };
+      });
+    } catch (error) {
+      if (version === generation.current)
+        setPageErrors((current) => ({
+          ...current,
+          [collection]:
+            error instanceof Error
+              ? error.message
+              : "The next page could not load. Try again.",
+        }));
+    } finally {
+      if (version === generation.current) {
+        pendingPages.current.delete(collection);
+        setPageBusy((current) => ({ ...current, [collection]: false }));
+      }
+    }
+  };
   const mutate = async (route: string, input: Record<string, unknown> = {}) => {
     const result = await api<{ url?: string; checkout?: CheckoutDetails }>(
       route,
@@ -145,7 +219,16 @@ export function Provider({ children }: { children: ReactNode }) {
         role: workspace?.user.role || "candidate",
         mutate,
         refresh,
-        clearSession: () => setWorkspace(null),
+        clearSession: () => {
+          generation.current++;
+          pendingPages.current.clear();
+          setWorkspace(null);
+          setPageBusy({});
+          setPageErrors({});
+        },
+        loadMore,
+        pageBusy,
+        pageErrors,
       }}
     >
       {children}

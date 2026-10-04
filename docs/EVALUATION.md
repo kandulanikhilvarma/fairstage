@@ -1,29 +1,55 @@
 # Release evaluation
 
-Evaluation record date: 4 October 2026.
+Evaluation record date: 5 October 2026.
+
+## Version 1.2.0 local checks
+
+The release adds restricted case review, complete-history totals, stable pagination, and authenticated maintenance.
+The local source lint, TypeScript check, and production build passed.
+Unit and API checks passed 272 tests across nine files.
+Four PostgreSQL concurrency cases need the CI database and skipped locally.
+All six migrations passed through the PGlite fixtures.
+The CI database must also apply the migrations before release.
+Eight public browser checks passed locally.
+Eight operator checks passed with restricted-access responses and isolated route fixtures.
+The fixtures cover mobile targets, accessibility, stale edits, pagination, and recovery.
+Five account workflow checks need the CI database and skipped locally.
+
+The readiness report exposes configuration status without credential values.
+The report does not establish provider approval.
+Use [the first-stage delivery](FIRST_STAGE.md) for scope and deferred activation.
+
+The production dependency audit reported zero vulnerabilities.
+The full audit reported five related development findings from one unpatched `braces` dependency.
+That dependency belongs to the Next.js ESLint tooling.
+The advisory reports no patched version. [Upstream advisory](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm).
+The app does not accept public glob patterns through this development tool.
+Keep the development environment restricted to trusted source.
+
+## Previous application release: 1.1.0
 
 Accounts and workspace records use PostgreSQL.
 The release adds authentication, information features, and provider integrations.
 The application release commit is `d9f477ee13b80a0ad57ccc29246a847f7cc9af0a`.
 Its verified pull request head is `15b2ccfb31999d726fd21044939cfe07c8317da1`.
 
-## Evidence recorded so far
+### Previous release evidence
 
-| Check | Recorded result | Scope |
-| --- | --- | --- |
-| Full source lint | Passed | ESLint across the repository |
-| Type check | Passed | TypeScript with no emitted files |
-| Unit and API tests | 180 passed in CI; 177 locally | Five files; database, authentication, and payment checks |
-| PostgreSQL concurrency tests | 3 passed in CI | Cross-connection ownership races; these three cases skipped locally |
-| SQL migrations | 4 applied in CI | Initial, authentication, workspace, and Razorpay migrations |
-| Production build | Passed | Next.js 16.3.8, version 1.1.0 |
-| Production dependency audit | 0 vulnerabilities | 35 production dependencies through npm audit |
-| Browser checks | 13 passed in CI; 8 passed locally | Five authenticated workflows used CI PostgreSQL and skipped locally |
-| Populated wallet checks | 4 passed locally | Both roles downloaded 221 CSV rows and showed 503 errors; route mocks only |
-| Final visual confirmation | 3 targeted tests passed | Desktop and mobile controls, Google icon, navigation, and fresh-password fields |
-| Documentation linter | 0 errors | STE mechanical checks; technical and parser advisories reviewed |
-| Direct repository audit | Passed | YAML, fences, Mermaid syntax patterns, license removal, credential patterns, and Git identity |
-| Public deployment | Verified on 4 October 2026 | 16 pages returned 200; version 1.1.0; account and payment services unavailable |
+| Check                        | Recorded result                   | Scope                                                                                         |
+| ---------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------- |
+| Full source lint             | Passed                            | ESLint across the repository                                                                  |
+| Type check                   | Passed                            | TypeScript with no emitted files                                                              |
+| Unit and API tests           | 180 passed in CI; 177 locally     | Five files; database, authentication, and payment checks                                      |
+| PostgreSQL concurrency tests | 3 passed in CI                    | Cross-connection ownership races; these three cases skipped locally                           |
+| SQL migrations               | 4 applied in CI                   | Initial, authentication, workspace, and Razorpay migrations                                   |
+| Production build             | Passed                            | Next.js 16.3.8, version 1.1.0                                                                 |
+| Production dependency audit  | 0 vulnerabilities                 | 35 production dependencies through npm audit                                                  |
+| Browser checks               | 13 passed in CI; 8 passed locally | Five authenticated workflows used CI PostgreSQL and skipped locally                           |
+| Populated wallet checks      | 4 passed locally                  | Both roles downloaded 221 CSV rows and showed 503 errors; route mocks only                    |
+| Final visual confirmation    | 3 targeted tests passed           | Desktop and mobile controls, Google icon, navigation, and fresh-password fields               |
+| Documentation linter         | 0 errors                          | STE mechanical checks; technical and parser advisories reviewed                               |
+| Direct repository audit      | Passed                            | YAML, fences, Mermaid syntax patterns, license removal, credential patterns, and Git identity |
+| Public deployment            | Verified on 4 October 2026        | 16 pages returned 200; version 1.1.0; account and payment services unavailable                |
 
 The [release CI run](https://github.com/kandulanikhilvarma/fairstage/actions/runs/37194633779) passed on the exact pull request head.
 The run applied all four migrations and passed all 180 unit tests and 13 browser tests.
@@ -110,8 +136,10 @@ Provider sandbox and commercial transaction checks remain separate from automate
 Country policy, contracts, taxes, and support procedures need owner approval.
 The release has no salary deductions or repayment debt.
 Team and Scale prices remain proposals without subscriptions.
-The release has no automatic dispute decisions or operator console.
-Large deployments need pagination and export load checks.
+The release has no automatic dispute decisions.
+Operator review needs a verified account on the server allowlist.
+Stable pagination and complete totals have dedicated tests above 200 records.
+High-volume deployments still need resource and export load checks.
 The optional model needs separate acceptance against its configured endpoint.
 
 See [the launch guide](LAUNCH.md) and [the operator guide](OPERATIONS.md).
