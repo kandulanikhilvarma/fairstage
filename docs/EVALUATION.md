@@ -4,7 +4,8 @@ Evaluation record date: 4 October 2026.
 
 Accounts and workspace records use PostgreSQL.
 The release adds authentication, information features, and provider integrations.
-Full release results must show the exact source commit.
+The application release commit is `d9f477ee13b80a0ad57ccc29246a847f7cc9af0a`.
+Its verified pull request head is `15b2ccfb31999d726fd21044939cfe07c8317da1`.
 
 ## Evidence recorded so far
 
@@ -12,24 +13,33 @@ Full release results must show the exact source commit.
 | --- | --- | --- |
 | Full source lint | Passed | ESLint across the repository |
 | Type check | Passed | TypeScript with no emitted files |
-| Unit and API tests | 177 passed, 3 skipped locally | Five files; PGlite, test RSA keys, and mocked provider requests |
-| PostgreSQL concurrency tests | Await CI | Three cross-connection ownership races need the CI database |
+| Unit and API tests | 180 passed in CI; 177 locally | Five files; database, authentication, and payment checks |
+| PostgreSQL concurrency tests | 3 passed in CI | Cross-connection ownership races; these three cases skipped locally |
+| SQL migrations | 4 applied in CI | Initial, authentication, workspace, and Razorpay migrations |
 | Production build | Passed | Next.js 16.3.8, version 1.1.0 |
 | Production dependency audit | 0 vulnerabilities | 35 production dependencies through npm audit |
-| Browser checks | 8 passed, 5 skipped locally | Public controls and accessibility; authenticated workflows need CI PostgreSQL |
+| Browser checks | 13 passed in CI; 8 passed locally | Five authenticated workflows used CI PostgreSQL and skipped locally |
+| Populated wallet checks | 4 passed locally | Both roles downloaded 221 CSV rows and showed 503 errors; route mocks only |
 | Final visual confirmation | 3 targeted tests passed | Desktop and mobile controls, Google icon, navigation, and fresh-password fields |
 | Documentation linter | 0 errors | STE mechanical checks; technical and parser advisories reviewed |
 | Direct repository audit | Passed | YAML, fences, Mermaid syntax patterns, license removal, credential patterns, and Git identity |
-| Public deployment | Not yet recorded for this release | Add the final source commit and public-domain results |
+| Public deployment | Verified on 4 October 2026 | 16 pages returned 200; version 1.1.0; account and payment services unavailable |
+
+The [release CI run](https://github.com/kandulanikhilvarma/fairstage/actions/runs/37194633779) passed on the exact pull request head.
+The run applied all four migrations and passed all 180 unit tests and 13 browser tests.
+CI used an isolated PostgreSQL 17 service.
+The [main-branch CI run](https://github.com/kandulanikhilvarma/fairstage/actions/runs/37194805287) also passed on the merged application source.
 
 Local skips do not establish the result of the PostgreSQL checks.
-Earlier screenshots and test reports cannot establish the state of changed code.
-Update [the deployment record](DEPLOYMENT.md) after the current source reaches Ready.
+The public health response was 503 because the account database was unavailable.
+All public service flags were false, and the default currency was INR.
+See [the deployment record](DEPLOYMENT.md) for the source and service results.
 
 Four current screenshots cover the home and account pages at desktop and mobile widths.
 The release removes older screenshots whose content no longer matches the app.
 The design detector ran once and returned advisory findings only.
 The final confirmation found no new material visual defect.
+The published workspace and account page showed clear controls and service-unavailable messages.
 
 ## Authentication coverage
 
@@ -47,7 +57,7 @@ Google and Resend calls use mocks in these tests.
 
 ## Backend release checks
 
-Record the final results for each check:
+Automated coverage includes these checks:
 
 - Tenant isolation for profiles, jobs, applicants, rounds, and exports.
 - Input validation for currencies, profile URLs, skills, and time zones.

@@ -1,17 +1,135 @@
 {
   "releaseVersion": "1.1.0",
-  "status": "deployment-verification-pending",
-  "checkedAt": null,
-  "sourceCommit": null,
+  "status": "deployed-services-unavailable",
+  "checkedAt": "2026-10-04T10:17:24.589Z",
+  "sourceCommit": "d9f477ee13b80a0ad57ccc29246a847f7cc9af0a",
   "url": "https://fairstage.vercel.app",
-  "health": null,
-  "configuration": null,
-  "pages": [],
+  "health": {
+    "status": "unavailable",
+    "mode": "production",
+    "version": "1.1.0",
+    "httpStatus": 503
+  },
+  "configuration": {
+    "accounts": false,
+    "payments": false,
+    "ai": false,
+    "email": false,
+    "google": false,
+    "magic": false,
+    "razorpay": false,
+    "currency": "INR"
+  },
+  "pages": [
+    {
+      "path": "/",
+      "status": 200
+    },
+    {
+      "path": "/pricing",
+      "status": 200
+    },
+    {
+      "path": "/jobs",
+      "status": 200
+    },
+    {
+      "path": "/how-it-works",
+      "status": 200
+    },
+    {
+      "path": "/open",
+      "status": 200
+    },
+    {
+      "path": "/policy",
+      "status": 200
+    },
+    {
+      "path": "/privacy",
+      "status": 200
+    },
+    {
+      "path": "/examples",
+      "status": 200
+    },
+    {
+      "path": "/account",
+      "status": 200
+    },
+    {
+      "path": "/workspace",
+      "status": 200
+    },
+    {
+      "path": "/workspace/interviews",
+      "status": 200
+    },
+    {
+      "path": "/workspace/wallet",
+      "status": 200
+    },
+    {
+      "path": "/workspace/preparation",
+      "status": 200
+    },
+    {
+      "path": "/workspace/analytics",
+      "status": 200
+    },
+    {
+      "path": "/workspace/settings",
+      "status": 200
+    },
+    {
+      "path": "/sitemap.xml",
+      "status": 200
+    }
+  ],
+  "guards": [
+    {
+      "path": "/api/auth/register",
+      "status": 503
+    },
+    {
+      "path": "/api/webhooks/stripe",
+      "status": 503
+    },
+    {
+      "path": "/api/webhooks/razorpay",
+      "status": 503
+    }
+  ],
   "activationGates": [
     "Migrated PostgreSQL database and secure deployment connection",
     "Google OAuth credentials or verified email sender",
     "Razorpay merchant and Route approval with verified linked accounts",
     "USD disabled for the India operator",
     "Commercial hosting plan before a paid launch"
-  ]
+  ],
+  "deployment": {
+    "provider": "Vercel",
+    "githubDeploymentId": 6839699634,
+    "environment": "Production",
+    "state": "success",
+    "sourceCommit": "d9f477ee13b80a0ad57ccc29246a847f7cc9af0a",
+    "completedAt": "2026-10-04T10:16:27Z",
+    "url": "https://fairstage-g0gp76tcb-kandula.vercel.app",
+    "projectResultUrl": "https://vercel.com/kandula/fairstage/3CYhHT3kz3ubeH1VX81DbEcshwBw",
+    "verificationMethod": "Connected GitHub deployment record and public HTTP checks; Vercel MCP team access unavailable"
+  },
+  "ci": {
+    "pullRequest": 11,
+    "verifiedHead": "15b2ccfb31999d726fd21044939cfe07c8317da1",
+    "runId": 37194633779,
+    "url": "https://github.com/kandulanikhilvarma/fairstage/actions/runs/37194633779",
+    "conclusion": "success",
+    "unitTestsPassed": 180,
+    "browserTestsPassed": 13,
+    "migrationsApplied": 4,
+    "mainRunId": 37194805287,
+    "mainRunUrl": "https://github.com/kandulanikhilvarma/fairstage/actions/runs/37194805287",
+    "mainConclusion": "success"
+  },
+  "evidenceScope": "Application release observed before the later documentation commit"
 }
