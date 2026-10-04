@@ -20,7 +20,7 @@ export default function How() {
           ],
           [
             "Fund the accepted round.",
-            "The candidate completes payment setup. The employer funds the candidate amount and platform fee through Stripe Checkout. The provider confirms the payment.",
+            "The candidate completes payment setup. The employer pays through Razorpay for INR or Stripe for USD. The provider confirms the payment.",
           ],
           [
             "Confirm the work together.",
@@ -45,13 +45,13 @@ export default function How() {
           repay their interview pay after a rejection. The app cannot deduct a
           first salary.
         </p>
-        <h2>Try each side.</h2>
+        <h2>Choose your account.</h2>
         <p>
-          The public demo has an employer workspace and a candidate workspace.
-          Switch roles to test acceptance, completion, and payment release.
+          Employers publish roles and offer paid rounds. Candidates track
+          applications, review terms, and confirm completed interviews.
         </p>
-        <Link href="/workspace" className="button">
-          Explore the process <ArrowRight size={18} />
+        <Link href="/account" className="button">
+          Create an account <ArrowRight size={18} />
         </Link>
       </div>
     </PublicShell>

@@ -34,6 +34,3 @@ export async function transaction<T>(
     client.release();
   }
 }
-export function isDemo() {
-  return process.env.DEMO_MODE !== "false";
-}

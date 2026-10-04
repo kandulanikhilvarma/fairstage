@@ -11,13 +11,13 @@ export default function Open() {
           for a fair round.
         </h1>
         <p>
-          The code is open source under the MIT License. You can inspect the fee
-          calculations, payment states, and candidate protections.
+          You can inspect the fee calculations, payment states, and candidate
+          protections in the public repository.
         </p>
-        <h2>Open-source software</h2>
+        <h2>Visible product rules</h2>
         <p>
-          Self-host the app or adapt it to your pilot. The repository includes
-          the database schema, API, tests, setup guide, and launch checklist.
+          The repository includes the database schema, API, tests, setup guide,
+          and launch checklist.
         </p>
         <h2>Transparent economics</h2>
         <p>
@@ -37,10 +37,7 @@ export default function Open() {
           The assistant suggests questions and a preparation plan. It does not
           score people, rank applicants, or decide who gets a job.
         </p>
-        <p>
-          Without an endpoint, Fairstage gives a local preparation guide. The
-          demo uses this local guide.
-        </p>
+        <p>Without an endpoint, Fairstage gives a local preparation guide.</p>
         <div className="notice">
           <Code2 size={19} />
           <span>

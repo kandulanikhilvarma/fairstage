@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
-import { isDemo } from "@/lib/db";
-import { stripe, processWebhook } from "@/lib/payments";
+import {
+  stripeWebhookClient,
+  stripeWebhookReady,
+  processWebhook,
+} from "@/lib/payments";
 
 export const runtime = "nodejs";
 export async function POST(request: Request) {
-  if (isDemo() || !process.env.STRIPE_WEBHOOK_SECRET)
+  if (!stripeWebhookReady() || !process.env.DATABASE_URL)
     return NextResponse.json(
       { error: "Payments are not configured." },
       { status: 503 },
@@ -16,18 +19,25 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   const body = await request.text();
-  if (body.length > 1000000)
+  if (Buffer.byteLength(body, "utf8") > 1000000)
     return NextResponse.json(
       { error: "The event is too large." },
       { status: 413 },
     );
   let event;
   try {
-    event = stripe().webhooks.constructEvent(
+    event = stripeWebhookClient().webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET,
+      process.env.STRIPE_WEBHOOK_SECRET!,
     );
+    if (
+      event.livemode !== process.env.STRIPE_SECRET_KEY!.startsWith("sk_live_")
+    )
+      return NextResponse.json(
+        { error: "The event environment does not match the payment account." },
+        { status: 400 },
+      );
   } catch {
     return NextResponse.json(
       { error: "The event signature is not valid." },

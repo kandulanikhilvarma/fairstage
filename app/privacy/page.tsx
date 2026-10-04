@@ -9,20 +9,10 @@ export default function Privacy() {
           must publish its legal identity, retention periods, and
           country-specific privacy notice.
         </p>
-        <h2>Public demo</h2>
+        <h2>Your account</h2>
         <p>
-          The demo stores fictional workspace data in your browser. The Reset
-          demo control removes your changes. Do not enter personal or
-          confidential data.
-        </p>
-        <p>
-          The demo sends no workspace records to a database or payment service.
-          The hosting provider can process ordinary request logs.
-        </p>
-        <h2>Live accounts</h2>
-        <p>
-          A configured live service stores the account name, email, role,
-          profile, applications, and round records in PostgreSQL.
+          Fairstage stores the account name, email, role, profile, skills,
+          portfolio links, applications, and round records in PostgreSQL.
         </p>
         <p>
           The server stores password hashes and hashed session tokens. The
@@ -30,7 +20,7 @@ export default function Privacy() {
         </p>
         <h2>Payment data</h2>
         <p>
-          Stripe collects payment and identity details on its hosted pages.
+          Razorpay and Stripe collect payment details on their checkout pages.
           Fairstage stores provider identifiers and payment states. The app does
           not store card numbers.
         </p>
@@ -45,7 +35,8 @@ export default function Privacy() {
         </p>
         <h2>Access and deletion</h2>
         <p>
-          A live operator must handle access, correction, export, and deletion
+          Edit your profile in the workspace. Export your account records as
+          JSON and your payment ledger as CSV. Contact the operator for deletion
           requests. Financial records can need a separate legal retention
           period.
         </p>

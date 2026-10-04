@@ -1,99 +1,107 @@
 # Release evaluation
 
-Evaluation date: 2 October 2026.
+Evaluation record date: 4 October 2026.
 
-The release includes a working public demo and a configurable live API.
-The public demo uses fictional records and cannot move money.
-The live payment integration has automated tests with a mocked provider.
-The owner must complete the real-service checks before a paid launch.
+Accounts and workspace records use PostgreSQL.
+The release adds authentication, information features, and provider integrations.
+Full release results must show the exact source commit.
 
-## Local checks
+## Evidence recorded so far
 
-| Check | Result | Evidence and limit |
+| Check | Recorded result | Scope |
 | --- | --- | --- |
-| TypeScript | Passed | `npm run typecheck` |
-| ESLint | Passed with two warnings | Full-page account redirects reset client state. The warnings concern Next.js navigation. |
-| Production build | Passed | Next.js 16.3.8 built all public and workspace routes. |
-| Unit and API tests | 34 passed | Vitest, PGlite, and a mocked Stripe client |
-| Browser tests | 8 passed | Chromium through Playwright |
-| Accessibility | Passed | No serious or critical Axe findings on 15 routes |
-| Responsive layout | Passed | No horizontal overflow at 1440px and 390px on home and workspace |
-| Dependency audit | Passed | `npm audit` reported zero known vulnerabilities at evaluation time. |
-| Prose checks | Passed with advisory warnings | The STE linter found no errors. The approved dictionary is not part of the skill. |
+| Full source lint | Passed | ESLint across the repository |
+| Type check | Passed | TypeScript with no emitted files |
+| Unit and API tests | 177 passed, 3 skipped locally | Five files; PGlite, test RSA keys, and mocked provider requests |
+| PostgreSQL concurrency tests | Await CI | Three cross-connection ownership races need the CI database |
+| Production build | Passed | Next.js 16.3.8, version 1.1.0 |
+| Production dependency audit | 0 vulnerabilities | 35 production dependencies through npm audit |
+| Browser checks | 8 passed, 5 skipped locally | Public controls and accessibility; authenticated workflows need CI PostgreSQL |
+| Final visual confirmation | 3 targeted tests passed | Desktop and mobile controls, Google icon, navigation, and fresh-password fields |
+| Documentation linter | 0 errors | STE mechanical checks; technical and parser advisories reviewed |
+| Direct repository audit | Passed | YAML, fences, Mermaid syntax patterns, license removal, credential patterns, and Git identity |
+| Public deployment | Not yet recorded for this release | Add the final source commit and public-domain results |
 
-The screenshot files in `docs/screenshots` show the evaluated layouts.
-The accessibility result covers automated checks.
-A full review with assistive technology remains part of launch acceptance.
+Local skips do not establish the result of the PostgreSQL checks.
+Earlier screenshots and test reports cannot establish the state of changed code.
+Update [the deployment record](DEPLOYMENT.md) after the current source reaches Ready.
 
-## Design review
+Four current screenshots cover the home and account pages at desktop and mobile widths.
+The release removes older screenshots whose content no longer matches the app.
+The design detector ran once and returned advisory findings only.
+The final confirmation found no new material visual defect.
 
-The final finish-review disposition is **ship**.
-The bounded review found four material issues and verified their repair in new screenshots.
+## Authentication coverage
 
-| Finding | Final result |
-| --- | --- |
-| Connected round path and icon fields | Restored and verified |
-| Headline scale, white type, and main action | Restored and verified |
-| White outcome and navy/outlined role actions | Restored and verified |
-| Extra labels above process headings | Removed and verified |
+The tests check browser-bound Google state and PKCE.
+The tests check RSA signatures, audience, issuer, expiry, email verification, and nonce.
+The tests reject callback replay and token exchange failure.
+The permanent Google subject remains stable after an email change.
 
-## Payment and account evidence
+Email link tests check expiry, hashed secrets, browser binding, and one-time consumption.
+The tests preserve verified account roles.
+The tests revoke an unverified registrant's credentials, sessions, and tokens at the first verified claim.
+The tests preserve financial mappings during that claim.
+The tests check generic responses, cross-origin rejection, delivery failure, and rate limits.
+Google and Resend calls use mocks in these tests.
 
-API tests apply the schema to an actual PostgreSQL engine through PGlite.
-The tests check account ownership and reject actions from another account.
-The tests check exact-origin validation and unauthenticated access.
+## Backend release checks
 
-Money tests check both completion confirmations before release.
-The tests also check repeated release calls, provider failure rollback, and webhook replay.
-Refund tests check cumulative amounts and transfer reversal totals.
-No test moves real money.
+Record the final results for each check:
 
-Browser tests check job creation, candidate applications, acceptance, funding, completion, release, and disputes in the demo.
-The tests also check CSV export, browser persistence, local preparation, and the bonus calculator.
-The demo API refuses account registration and Stripe events.
+- Tenant isolation for profiles, jobs, applicants, rounds, and exports.
+- Input validation for currencies, profile URLs, skills, and time zones.
+- Candidate withdrawal and employer application updates.
+- Private note ownership.
+- Calendar access and text escaping.
+- Full CSV export beyond the 200-row workspace limit.
+- Payment amount, currency, order, and recipient validation.
+- Completion from both participants before release.
+- Provider request retries and event replay.
+- Refund, reversal, dispute, and uncertain request recovery.
+- JSON body and origin validation.
 
-## GitHub hygiene
+## Browser and visual checks
 
-The supplied hygiene skill contains no audit or Mermaid helper scripts.
-Equivalent checks use the repository's actual files and Git state.
-The direct checks cover YAML, license, citation, closed fences, Mermaid text, author identity, and commit messages.
-The checks did not run the absent helper scripts.
+The release needs checks at desktop and mobile widths.
+Check the visible text and buttons in every state.
+Check the focus, disabled controls, progress states, and error messages.
+Check the account sign-in and sign-out.
+Check profiles, roles, applications, acceptance, notes, calendars, and exports.
+Check the preparation feature with the local guide.
 
-The repository includes CI, contribution instructions, a security policy, and an MIT license.
-CI runs tests, builds the app, and applies the migration to PostgreSQL 17.
-The release needs a successful CI run before the squash merge.
-The pre-merge base has a backup branch.
+Provider-hosted checkout needs separate acceptance with the selected merchant account.
+Do not infer payment approval from a screenshot or a mocked response.
+Do not label an illustrative template as a completed interview record.
 
-Pull request [#1](https://github.com/kandulanikhilvarma/fairstage/pull/1) passed CI and has a squash merge.
-The merged main branch also [passed CI](https://github.com/kandulanikhilvarma/fairstage/actions/runs/37014071806).
-The merge author has the owner's canonical name and email. The commit has no automated-tool attribution.
-GitHub rendered the README architecture diagram successfully.
+## GitHub and deployment checks
 
-## Public deployment
+Check the owner identity and concise Conventional Commit message.
+Check the exact pull request head through CI.
+Save the pre-merge base.
+Read back the squash merge and connected Vercel source.
 
-Vercel published [the public demo](https://fairstage.vercel.app) from the verified main branch.
-HTTP checks passed for 14 app pages, two API endpoints, and the sitemap.
-The health endpoint reports `status: ok`, `mode: demo`, and `version: 1.0.0`.
-The registration and Stripe webhook endpoints return 503 in demo mode.
+The supplied GitHub hygiene skill contains no helper scripts.
+Use direct checks for source, YAML, fences, Mermaid, links, and Git identity.
+Do not claim a helper ran when the helper file does not exist.
 
-See [the deployment record](DEPLOYMENT.md) and [HTTP evidence](deployment-evidence.json).
-The live screenshot is `docs/screenshots/live-home.png`.
-On 3 October, the live browser check confirmed the demo round from both account roles.
-The simulated release followed both confirmations and remained after a page reload.
-The candidate screenshot is `docs/screenshots/live-workspace.png`.
+Check the public health response and service availability.
+Record public-domain evidence without account secrets or personal data.
+The production result must state which services remain unavailable.
 
-## Launch limits
+## Commercial limits
 
-- No commercial Stripe account or live transaction has passed acceptance checks.
-- The public demo has no hosted database or email account.
-- Country support and employment terms need the owner's local review.
-- Salary deductions and repayment debts have no implementation.
-- The bonus credit is a calculator proposal, with no payroll instructions.
-- Team and Scale prices are proposals, with no subscription billing.
-- Dispute decisions need an operator. The release has no operator console.
-- Tax collection, team membership, SSO, ATS sync, and calendar sync remain on the roadmap.
-- Workspace queries return bounded results without pagination.
-- Optional model behavior needs separate tests against the selected endpoint and weights.
+Google and email sign-in need approved credentials.
+Payment providers need merchant activation and the interview funds-flow review.
+Razorpay Route needs approved linked accounts and operator-controlled mappings.
+Stripe needs platform and country approval.
+Provider sandbox and commercial transaction checks remain separate from automated tests.
 
-Use [the launch guide](LAUNCH.md) for the required service checks.
-Use [the operator guide](OPERATIONS.md) for reconciliation and incident procedures.
+Country policy, contracts, taxes, and support procedures need owner approval.
+The release has no salary deductions or repayment debt.
+Team and Scale prices remain proposals without subscriptions.
+The release has no automatic dispute decisions or operator console.
+Large deployments need pagination and export load checks.
+The optional model needs separate acceptance against its configured endpoint.
+
+See [the launch guide](LAUNCH.md) and [the operator guide](OPERATIONS.md).

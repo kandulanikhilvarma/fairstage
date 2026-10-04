@@ -6,6 +6,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/pricing",
     "/jobs",
     "/open",
+    "/examples",
     "/policy",
     "/privacy",
   ].map((path) => ({

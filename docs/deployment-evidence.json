@@ -1,90 +1,17 @@
 {
-  "checkedAt": "2026-10-02T13:41:00.1386771Z",
-  "health": {
-    "status": "ok",
-    "mode": "demo",
-    "version": "1.0.0"
-  },
-  "sourceCommit": "328d3f61e36f593c87559c11bf72491e616c6693",
+  "releaseVersion": "1.1.0",
+  "status": "deployment-verification-pending",
+  "checkedAt": null,
+  "sourceCommit": null,
   "url": "https://fairstage.vercel.app",
-  "pages": [
-    {
-      "path": "/",
-      "status": 200
-    },
-    {
-      "path": "/pricing",
-      "status": 200
-    },
-    {
-      "path": "/jobs",
-      "status": 200
-    },
-    {
-      "path": "/how-it-works",
-      "status": 200
-    },
-    {
-      "path": "/open",
-      "status": 200
-    },
-    {
-      "path": "/policy",
-      "status": 200
-    },
-    {
-      "path": "/privacy",
-      "status": 200
-    },
-    {
-      "path": "/account",
-      "status": 200
-    },
-    {
-      "path": "/workspace",
-      "status": 200
-    },
-    {
-      "path": "/workspace/interviews",
-      "status": 200
-    },
-    {
-      "path": "/workspace/wallet",
-      "status": 200
-    },
-    {
-      "path": "/workspace/preparation",
-      "status": 200
-    },
-    {
-      "path": "/workspace/analytics",
-      "status": 200
-    },
-    {
-      "path": "/workspace/settings",
-      "status": 200
-    },
-    {
-      "path": "/api/health",
-      "status": 200
-    },
-    {
-      "path": "/api/config",
-      "status": 200
-    },
-    {
-      "path": "/sitemap.xml",
-      "status": 200
-    }
-  ],
-  "guards": [
-    {
-      "path": "/api/auth/register",
-      "status": 503
-    },
-    {
-      "path": "/api/webhooks/stripe",
-      "status": 503
-    }
+  "health": null,
+  "configuration": null,
+  "pages": [],
+  "activationGates": [
+    "Migrated PostgreSQL database and secure deployment connection",
+    "Google OAuth credentials or verified email sender",
+    "Razorpay merchant and Route approval with verified linked accounts",
+    "USD disabled for the India operator",
+    "Commercial hosting plan before a paid launch"
   ]
 }

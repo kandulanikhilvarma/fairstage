@@ -7,150 +7,133 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { demoWorkspace, mutateDemo, seedDemo, type DemoData } from "@/lib/demo";
 import type { Role, Workspace } from "@/lib/domain";
-
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+  }
+}
 export async function api<T>(route: string, body?: unknown): Promise<T> {
-  const res = await fetch(`/api/${route}`, {
+  const res = await fetch("/api/" + route, {
     method: body === undefined ? "GET" : "POST",
+    cache: "no-store",
     headers: body === undefined ? {} : { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
+    signal: AbortSignal.timeout(20000),
   });
-  const result = await res.json();
+  const result = await res
+    .json()
+    .catch(() => ({
+      error: "The service did not return a valid response. Try again.",
+    }));
   if (!res.ok)
-    throw new Error(result.error || "The request failed. Try again.");
+    throw new ApiError(
+      result.error || "The request failed. Try again.",
+      res.status,
+    );
   return result;
 }
-type Config = { demo: boolean; payments: boolean; ai: boolean; email: boolean };
+export type Config = {
+  accounts: boolean;
+  payments: boolean;
+  ai: boolean;
+  email: boolean;
+  google: boolean;
+  magic: boolean;
+  razorpay: boolean;
+  currency: "USD" | "INR";
+};
+export type CheckoutDetails = {
+  key: string;
+  orderId: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+};
 type Context = {
   workspace: Workspace | null;
   config: Config;
   loading: boolean;
   error: string;
   role: Role;
-  switchRole: (role: Role) => void;
   mutate: (
     route: string,
     input?: Record<string, unknown>,
-  ) => Promise<{ url?: string }>;
+  ) => Promise<{ url?: string; checkout?: CheckoutDetails }>;
   refresh: () => Promise<void>;
-  reset: () => void;
-  demoData: DemoData | null;
+  clearSession: () => void;
 };
 const context = createContext<Context | null>(null);
-const storageKey = "fairstage.demo.v1";
-export function Provider({
-  children,
-  demo,
-}: {
-  children: ReactNode;
-  demo: boolean;
-}) {
-  const [config, setConfig] = useState<Config>({
-    demo,
-    payments: false,
-    ai: false,
-    email: false,
-  });
+const initialConfig: Config = {
+  accounts: false,
+  payments: false,
+  ai: false,
+  email: false,
+  google: false,
+  magic: false,
+  razorpay: false,
+  currency: "INR",
+};
+export function Provider({ children }: { children: ReactNode }) {
+  const [config, setConfig] = useState<Config>(initialConfig);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
-  const [demoData, setDemoData] = useState<DemoData | null>(null);
-  const [role, setRole] = useState<Role>("employer");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const refresh = useCallback(async () => {
-    if (config.demo) return;
-    const data = await api<Workspace>("workspace");
-    setWorkspace(data);
-    setRole(data.user.role);
-  }, [config.demo]);
+    try {
+      const data = await api<Workspace>("workspace");
+      setWorkspace(data);
+      setError("");
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 401) setWorkspace(null);
+      throw e;
+    }
+  }, []);
   useEffect(() => {
     let active = true;
-    api<Config>("config")
-      .then(async (c) => {
+    async function load() {
+      try {
+        const c = await api<Config>("config");
         if (!active) return;
         setConfig(c);
-        if (c.demo) {
-          let data = seedDemo();
-          let selected: Role = "employer";
-          try {
-            const saved = JSON.parse(
-              localStorage.getItem(storageKey) || "null",
-            );
-            if (
-              saved?.data?.users &&
-              Array.isArray(saved.data.rounds) &&
-              Array.isArray(saved.data.jobs) &&
-              Array.isArray(saved.data.ledger) &&
-              Array.isArray(saved.data.applications) &&
-              Array.isArray(saved.data.disputes)
-            ) {
-              data = saved.data;
-              selected = saved.role === "candidate" ? "candidate" : "employer";
-            }
-          } catch {}
-          if (
-            new URLSearchParams(window.location.search).get("role") ===
-            "candidate"
-          )
-            selected = "candidate";
-          if (active) {
-            setDemoData(data);
-            setRole(selected);
-            setWorkspace(demoWorkspace(data, selected));
-          }
-        } else {
+        if (c.accounts) {
           try {
             const data = await api<Workspace>("workspace");
-            if (active) {
-              setWorkspace(data);
-              setRole(data.user.role);
-            }
+            if (active) setWorkspace(data);
           } catch (e) {
-            if (active)
-              setError(e instanceof Error ? e.message : "Sign in to continue.");
+            if (active && (!(e instanceof ApiError) || e.status !== 401))
+              setError(
+                e instanceof Error
+                  ? e.message
+                  : "The workspace could not load.",
+              );
           }
-        }
-      })
-      .catch(() => {
-        if (active) setError("The service did not answer. Refresh the page.");
-      })
-      .finally(() => {
+        } else
+          setError(
+            "Account service is temporarily unavailable. Please try again later.",
+          );
+      } catch {
+        if (active) setError("The service did not answer. Please try again.");
+      } finally {
         if (active) setLoading(false);
-      });
+      }
+    }
+    void load();
     return () => {
       active = false;
     };
   }, []);
-  const persist = (data: DemoData, selected: Role) => {
-    setDemoData(data);
-    setRole(selected);
-    setWorkspace(demoWorkspace(data, selected));
-    try {
-      localStorage.setItem(
-        storageKey,
-        JSON.stringify({ data, role: selected }),
-      );
-    } catch {
-      setError(
-        "The browser could not save the demo. Changes last for this visit only.",
-      );
-    }
-  };
-  const switchRole = (selected: Role) => {
-    if (config.demo && demoData) persist(demoData, selected);
-  };
   const mutate = async (route: string, input: Record<string, unknown> = {}) => {
-    if (config.demo) {
-      if (!demoData) throw new Error("The demo is not ready. Try again.");
-      persist(mutateDemo(demoData, role, route, input), role);
-      return {};
-    }
-    const result = await api<{ url?: string }>(route, input);
+    const result = await api<{ url?: string; checkout?: CheckoutDetails }>(
+      route,
+      input,
+    );
     await refresh();
     return result;
-  };
-  const reset = () => {
-    if (config.demo) persist(seedDemo(), "employer");
   };
   return (
     <context.Provider
@@ -159,12 +142,10 @@ export function Provider({
         config,
         loading,
         error,
-        role,
-        switchRole,
+        role: workspace?.user.role || "candidate",
         mutate,
         refresh,
-        reset,
-        demoData,
+        clearSession: () => setWorkspace(null),
       }}
     >
       {children}

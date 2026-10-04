@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BriefcaseBusiness, Search } from "lucide-react";
+import { ArrowRight, Search } from "lucide-react";
 import { api, useApp } from "./provider";
 import { money, type Job } from "@/lib/domain";
 export function JobsBoard() {
-  const { config, demoData, workspace, role, switchRole, mutate } = useApp();
+  const { workspace, role, mutate } = useApp();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
@@ -19,7 +19,7 @@ export function JobsBoard() {
       .then((r) => setJobs(r.jobs))
       .catch(() => setError("The jobs could not load. Refresh the page."));
   }, []);
-  const all = config.demo && demoData ? demoData.jobs : jobs;
+  const all = jobs;
   const filtered = all.filter(
     (j) =>
       j.status === "open" &&
@@ -72,15 +72,6 @@ export function JobsBoard() {
           ))}
         </select>
       </div>
-      {config.demo && (
-        <div className="notice alert-space">
-          <BriefcaseBusiness size={18} />
-          <span>
-            These are fictional jobs for the demo. Applications stay in this
-            browser.
-          </span>
-        </div>
-      )}
       {error && (
         <div role="alert" className="notice error alert-space">
           {error}
@@ -106,7 +97,8 @@ export function JobsBoard() {
               </div>
               <div className="job-pay">
                 <strong>
-                  {money(job.salaryMin * 100)}–{money(job.salaryMax * 100)}
+                  {money(job.salaryMin * 100, job.currency)}–
+                  {money(job.salaryMax * 100, job.currency)}
                 </strong>
                 <span>Annual salary · {job.stages} paid rounds</span>
               </div>
@@ -133,18 +125,9 @@ export function JobsBoard() {
                 ) : role !== "candidate" ? (
                   <div>
                     <p>Applications use a candidate account.</p>
-                    {config.demo ? (
-                      <button
-                        className="button"
-                        onClick={() => switchRole("candidate")}
-                      >
-                        Switch to candidate demo
-                      </button>
-                    ) : (
-                      <Link className="text-link" href="/workspace">
-                        Open employer workspace
-                      </Link>
-                    )}
+                    <Link className="text-link" href="/workspace">
+                      Open employer workspace
+                    </Link>
                   </div>
                 ) : workspace.applications.some((a) => a.jobId === job.id) ? (
                   <div className="notice success">

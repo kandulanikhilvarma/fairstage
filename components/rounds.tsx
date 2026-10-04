@@ -10,14 +10,20 @@ import {
   Plus,
   ShieldAlert,
 } from "lucide-react";
-import { useApp } from "./provider";
+import { api, useApp } from "./provider";
 import { Heading, Status } from "./workspace";
-import { dateLabel, defaults, money, quote } from "@/lib/domain";
+import { dateLabel, defaults, money, quote, type Currency } from "@/lib/domain";
+import { interviewTemplates } from "@/lib/templates";
+import { openCheckout } from "@/lib/checkout-client";
+import { RoundNote } from "./round-note";
 
 export function NewRound({ onDone }: { onDone: () => void }) {
   const { mutate, config } = useApp();
   const [kind, setKind] = useState(0);
-  const [amount, setAmount] = useState(15);
+  const [currency, setCurrency] = useState<Currency>(config.currency);
+  const [amount, setAmount] = useState(config.currency === "INR" ? 1000 : 15);
+  const [terms, setTerms] = useState(interviewTemplates[0].terms as string);
+  const amounts = currency === "INR" ? [1000, 3000, 6000] : [15, 45, 90];
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const q =
@@ -33,6 +39,7 @@ export function NewRound({ onDone }: { onDone: () => void }) {
       await mutate("rounds", {
         ...d,
         kind: defaults[kind].kind,
+        currency,
         minutes: Number(d.minutes),
         amountCents: Math.round(amount * 100),
         scheduledAt: new Date(String(d.scheduledAt)).toISOString(),
@@ -52,18 +59,45 @@ export function NewRound({ onDone }: { onDone: () => void }) {
       <p className="small-text muted">
         Set the terms first. The candidate accepts before you fund the round.
       </p>
-      {config.demo && (
-        <div className="notice alert-space">
-          This is a demo invitation. It goes to the fictional candidate
-          workspace in this browser.
-        </div>
-      )}
       {error && (
         <div className="notice error alert-space" role="alert">
           {error}
         </div>
       )}
+      <div className="form-actions alert-space">
+        {interviewTemplates.map((t) => (
+          <button
+            type="button"
+            className="button secondary small"
+            key={t.name}
+            onClick={() => {
+              setKind(t.kind);
+              setAmount(amounts[t.kind]);
+              setTerms(t.terms);
+            }}
+          >
+            {t.name}
+          </button>
+        ))}
+      </div>
       <form onSubmit={submit}>
+        <div className="field">
+          <label htmlFor="round-currency">Payment currency</label>
+          <select
+            id="round-currency"
+            value={currency}
+            onChange={(e) => {
+              const c = e.target.value as Currency;
+              setCurrency(c);
+              setAmount(
+                c === "INR" ? [1000, 3000, 6000][kind] : [15, 45, 90][kind],
+              );
+            }}
+          >
+            <option value="INR">INR · Razorpay</option>
+            <option value="USD">USD · Stripe</option>
+          </select>
+        </div>
         <div className="field-row">
           <div className="field">
             <label htmlFor="round-email">Candidate email</label>
@@ -72,7 +106,7 @@ export function NewRound({ onDone }: { onDone: () => void }) {
               name="candidateEmail"
               type="email"
               required
-              defaultValue={config.demo ? "alex@example.test" : ""}
+
               maxLength={254}
             />
           </div>
@@ -82,7 +116,7 @@ export function NewRound({ onDone }: { onDone: () => void }) {
               id="round-title"
               name="title"
               required
-              defaultValue="Product designer"
+              placeholder="Role title"
               minLength={2}
               maxLength={100}
             />
@@ -97,7 +131,7 @@ export function NewRound({ onDone }: { onDone: () => void }) {
               onChange={(e) => {
                 const i = +e.target.value;
                 setKind(i);
-                setAmount(defaults[i].cents / 100);
+                setAmount(amounts[i]);
               }}
             >
               {defaults.map((r, i) => (
@@ -123,7 +157,7 @@ export function NewRound({ onDone }: { onDone: () => void }) {
         </div>
         <div className="field-row">
           <div className="field">
-            <label htmlFor="round-amount">Candidate pay · USD</label>
+            <label htmlFor="round-amount">Candidate pay · {currency}</label>
             <input
               id="round-amount"
               type="number"
@@ -152,7 +186,6 @@ export function NewRound({ onDone }: { onDone: () => void }) {
             name="meetingUrl"
             type="url"
             required
-            defaultValue={config.demo ? "https://meet.example.test/demo" : ""}
             placeholder="https://…"
             maxLength={500}
           />
@@ -165,14 +198,15 @@ export function NewRound({ onDone }: { onDone: () => void }) {
             required
             minLength={20}
             maxLength={3000}
-            defaultValue="We will discuss one relevant project within the agreed time. You keep the round pay regardless of the hire decision. No salary deduction applies."
+            value={terms}
+            onChange={(e) => setTerms(e.target.value)}
           />
         </div>
         {q && (
           <div className="notice alert-space">
-            Candidate receives {money(q.amountCents)}. Employer pays{" "}
-            {money(q.totalCents)}, including the {money(q.feeCents)} platform
-            fee.
+            Candidate receives {money(q.amountCents, currency)}. Employer pays{" "}
+            {money(q.totalCents, currency)}, including the{" "}
+            {money(q.feeCents, currency)} platform fee.
           </div>
         )}
         <div className="form-actions">
@@ -189,7 +223,7 @@ export function NewRound({ onDone }: { onDone: () => void }) {
   );
 }
 export function Interviews() {
-  const { workspace: w, role, config, mutate } = useApp();
+  const { workspace: w, role, config, mutate, refresh } = useApp();
   const [filter, setFilter] = useState("all");
   const [open, setOpen] = useState("");
   const [form, setForm] = useState(false);
@@ -222,12 +256,13 @@ export function Interviews() {
     try {
       const result = await mutate(`rounds/${id}/${act}`, input);
       if (result.url) window.location.assign(result.url);
-      else
-        setMessage(
-          config.demo
-            ? "Demo round updated. No real money moved."
-            : "Round updated.",
-        );
+      else if (result.checkout) {
+        await openCheckout(result.checkout, async (payment) => {
+          await api("razorpay/verify", { roundId: id, ...payment });
+          await refresh();
+        });
+        setMessage("Payment confirmed. The round is funded.");
+      } else setMessage("Round updated.");
       setDispute("");
       setReason("");
     } catch (e) {
@@ -290,7 +325,9 @@ export function Interviews() {
                 </p>
               </div>
               <Status round={r} />
-              <strong className="amount">{money(r.amountCents)}</strong>
+              <strong className="amount">
+                {money(r.amountCents, r.currency)}
+              </strong>
               <button
                 className="button secondary small"
                 aria-expanded={expanded}
@@ -307,32 +344,30 @@ export function Interviews() {
                     <h3>Agreed scope</h3>
                     <p>{r.terms}</p>
                     <p>{r.minutes} minutes · No salary deduction</p>
-                    {config.demo ? (
-                      <p>Demo meeting link. No live call exists.</p>
-                    ) : (
-                      <a
-                        className="text-link"
-                        href={r.meetingUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Open meeting link <ExternalLink size={15} />
-                      </a>
-                    )}
+                    <a
+                      className="text-link"
+                      href={r.meetingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Open meeting link <ExternalLink size={15} />
+                    </a>
                   </div>
                   <div>
                     <h3>Payment breakdown</h3>
                     <div className="money-row">
                       <span>Candidate pay</span>
-                      <strong>{money(r.amountCents)}</strong>
+                      <strong>{money(r.amountCents, r.currency)}</strong>
                     </div>
                     <div className="money-row">
                       <span>Employer platform fee</span>
-                      <strong>{money(r.feeCents)}</strong>
+                      <strong>{money(r.feeCents, r.currency)}</strong>
                     </div>
                     <div className="money-row">
                       <span>Employer total</span>
-                      <strong>{money(r.amountCents + r.feeCents)}</strong>
+                      <strong>
+                        {money(r.amountCents + r.feeCents, r.currency)}
+                      </strong>
                     </div>
                   </div>
                 </div>
@@ -369,10 +404,24 @@ export function Interviews() {
                   {role === "employer" && r.status === "accepted" && (
                     <button
                       className="button"
-                      disabled={!!busy}
+                      disabled={
+                        !!busy ||
+                        !(r.currency === "INR"
+                          ? config.razorpay
+                          : config.payments)
+                      }
                       onClick={() => void action(r.id, "fund")}
+                      aria-describedby={
+                        (
+                          r.currency === "INR"
+                            ? config.razorpay
+                            : config.payments
+                        )
+                          ? undefined
+                          : `payment-setup-${r.id}`
+                      }
                     >
-                      {config.demo ? "Simulate funding" : "Fund round"}
+                      Fund round
                     </button>
                   )}
                   {["funded", "completed"].includes(r.status) &&
@@ -386,17 +435,21 @@ export function Interviews() {
                         Confirm completion
                       </button>
                     )}
-                  {r.status === "completed" &&
+                  {role === "employer" &&
+                    r.status === "completed" &&
                     r.employerConfirmed &&
                     r.candidateConfirmed && (
                       <button
                         className="button"
-                        disabled={!!busy}
+                        disabled={
+                          !!busy ||
+                          !(r.currency === "INR"
+                            ? config.razorpay
+                            : config.payments)
+                        }
                         onClick={() => void action(r.id, "release")}
                       >
-                        {config.demo
-                          ? "Simulate pay release"
-                          : "Release candidate pay"}
+                        Release candidate pay
                       </button>
                     )}
                   {["offered", "accepted"].includes(r.status) && (
@@ -408,6 +461,16 @@ export function Interviews() {
                       Cancel round
                     </button>
                   )}
+                  {role === "employer" &&
+                    ["accepted", "completed"].includes(r.status) &&
+                    !(r.currency === "INR"
+                      ? config.razorpay
+                      : config.payments) && (
+                      <p id={`payment-setup-${r.id}`} className="form-hint">
+                        Payments are temporarily unavailable for this currency.
+                        Contact support before you fund or release this round.
+                      </p>
+                    )}
                   {["funded", "completed"].includes(r.status) && (
                     <button
                       className="button secondary"
@@ -418,6 +481,15 @@ export function Interviews() {
                     </button>
                   )}
                 </div>
+                <div className="form-actions alert-space">
+                  <a
+                    className="button secondary small"
+                    href={"/api/rounds/" + r.id + "/calendar"}
+                  >
+                    Add to calendar
+                  </a>
+                </div>
+                <RoundNote roundId={r.id} />
                 {dispute === r.id && (
                   <form
                     className="inline-form"

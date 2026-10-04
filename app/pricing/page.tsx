@@ -74,10 +74,10 @@ export default function Pricing() {
                 </li>
               </ul>
               <Link
-                href="/workspace"
+                href="/account?role=employer"
                 className={`button ${i === 1 ? "lime" : "secondary"}`}
               >
-                {i === 0 ? "Try Launch" : "Explore the demo"}
+                {i === 0 ? "Try Launch" : "View account options"}
                 <ArrowRight size={17} />
               </Link>
             </article>

@@ -7,7 +7,6 @@ import "@fontsource/public-sans/500.css";
 import "@fontsource/public-sans/600.css";
 import "./globals.css";
 import { Provider } from "@/components/provider";
-import { isDemo } from "@/lib/db";
 
 export const metadata: Metadata = {
   title: {
@@ -15,7 +14,7 @@ export const metadata: Metadata = {
     template: "%s | Fairstage",
   },
   description:
-    "An open-source paid-interview platform. Employers pay candidates for each round, with clear terms and auditable payment states.",
+    "A paid-interview platform. Employers pay candidates for each round, with clear terms and auditable payment states.",
   metadataBase: new URL(process.env.APP_URL || "https://fairstage.vercel.app"),
   openGraph: {
     title: "Fairstage — Good interviews. Fair pay.",
@@ -39,7 +38,8 @@ export default function RootLayout({
               THESIS: "Paid rounds make interview time a clear agreement.",
               "OWN-WORLD":
                 "Civic co-op identity; blue fields, lime actions, Manrope, Public Sans, precise round paths.",
-              STORY: "Know the amount; explore the employer or candidate demo.",
+              STORY:
+                "Know the amount; create an employer or candidate account.",
               "FIRST VIEWPORT":
                 "Blue split hero; large left offer; three connected round rows on the right; lime CTA.",
               FORM: "Direction 3; seed 06c69640; user delegated brand and layout; split comp approved.",
@@ -51,7 +51,7 @@ export default function RootLayout({
         <a href="#main" className="skip-link">
           Skip to content
         </a>
-        <Provider demo={isDemo()}>{children}</Provider>
+        <Provider>{children}</Provider>
       </body>
     </html>
   );
