@@ -536,6 +536,86 @@ describe("private notes and account exports", () => {
     expect(exported.rounds).toHaveLength(206);
   });
 });
+describe("complete payment-record CSV exports", () => {
+  it.each([employer, candidate])(
+    "exports more than 200 owned records, both currencies, and no foreign data for %s",
+    async (id) => {
+      await sql(
+        "INSERT INTO ledger(round_id,type,amount_cents,provider_ref,created_at) SELECT $1,'paid',1000+n,'private-history-provider-'||n,'2020-01-01T00:00:00Z'::timestamptz+(n*interval '1 second') FROM generate_series(1,205) AS n",
+        [round],
+      );
+      const [usdRound] = await sql(
+        "INSERT INTO rounds(employer_id,candidate_id,title,kind,minutes,amount_cents,fee_cents,scheduled_at,meeting_url,terms,currency,payment_provider) VALUES($1,$2,'USD interview','Introduction',30,1599,128,'2030-10-09T12:00:00Z','https://example.test/interview','Clear paid scope.','USD','stripe') RETURNING id",
+        [employer, candidate],
+      );
+      await sql(
+        "INSERT INTO ledger(round_id,type,amount_cents,provider_ref,created_at) VALUES($1,'funded',1599,'private-usd-provider-reference','2020-01-01T00:00:00Z')",
+        [usdRound.id],
+      );
+      await signIn(id);
+      expect((await (await request("workspace")).json()).ledger).toHaveLength(
+        200,
+      );
+      const response = await request("ledger/export");
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toBe(
+        "text/csv; charset=utf-8",
+      );
+      expect(response.headers.get("content-disposition")).toBe(
+        'attachment; filename="fairstage-payment-records.csv"',
+      );
+      expect(response.headers.get("cache-control")).toBe("no-store");
+      const csv = await response.text();
+      const lines = csv.trimEnd().split("\r\n");
+      expect(lines[0]).toBe('"Date","Event","Round ID","Amount","Currency"');
+      expect(lines).toHaveLength(208);
+      expect(lines[1]).toBe(
+        `"2020-01-01T00:00:00.000Z","funded","${usdRound.id}","15.99","USD"`,
+      );
+      expect(lines[2]).toBe(
+        `"2020-01-01T00:00:01.000Z","paid","${round}","10.01","INR"`,
+      );
+      expect(lines[206]).toBe(
+        `"2020-01-01T00:03:25.000Z","paid","${round}","12.05","INR"`,
+      );
+      expect(lines[207]).toContain(`"funded","${round}","486.00","INR"`);
+      expect(csv).not.toContain(otherRound);
+      expect(csv).not.toContain("private-history-provider-");
+      expect(csv).not.toContain("private-usd-provider-reference");
+      expect(csv).not.toContain("sensitive-password-hash");
+      expect(state.stripeCheckout).not.toHaveBeenCalled();
+      expect(state.stripeRelease).not.toHaveBeenCalled();
+      expect(state.razorpayOrder).not.toHaveBeenCalled();
+      expect(state.razorpayRelease).not.toHaveBeenCalled();
+    },
+  );
+
+  it("rejects an unauthenticated payment-record export", async () => {
+    const response = await request("ledger/export");
+    expect(response.status).toBe(401);
+    expect(response.headers.get("content-type")).toContain("application/json");
+    expect(await response.text()).not.toContain(round);
+    expect(await sql("SELECT * FROM rate_limits")).toHaveLength(0);
+  });
+
+  it("limits each account to five CSV exports per hour and permits a later window", async () => {
+    await signIn(candidate);
+    for (let attempt = 0; attempt < 5; attempt++)
+      expect((await request("ledger/export")).status).toBe(200);
+    const limited = await request("ledger/export");
+    expect(limited.status).toBe(429);
+    expect(limited.headers.get("content-type")).toContain("application/json");
+    await signIn(otherCandidate);
+    expect((await request("ledger/export")).status).toBe(200);
+    await sql(
+      "UPDATE rate_limits SET reset_at=now()-interval '1 second' WHERE key=$1",
+      [tokenHash("ledger-export:" + candidate)],
+    );
+    await signIn(candidate);
+    expect((await request("ledger/export")).status).toBe(200);
+  });
+});
+
 describe("calendar authorization and serialization", () => {
   it.each([employer, candidate])(
     "gives each round participant a UTC calendar download",

@@ -718,16 +718,12 @@ test.describe("production workflows with an isolated local PostgreSQL database",
       expect(calendarText).toContain("DTSTART:");
       expect(calendarText).toContain("DTEND:");
       await candidatePage.goto("/workspace/wallet");
-      const csvPromise = candidatePage.waitForEvent("download");
-      await candidatePage
-        .getByRole("button", { name: "Export CSV", exact: true })
-        .click();
-      const csv = await csvPromise;
-      expect(csv.suggestedFilename()).toBe("fairstage-payment-records.csv");
-      const csvPath = await csv.path();
-      expect((await readFile(csvPath!, "utf8")).split("\r\n")[0]).toBe(
-        '"Date","Event","Round ID","Amount","Currency"',
-      );
+      await expect(
+        candidatePage.getByRole("button", { name: "Export CSV", exact: true }),
+      ).toBeDisabled();
+      await expect(
+        candidatePage.getByText("No payment events yet.", { exact: true }),
+      ).toBeVisible();
       expect(
         (
           await database.query(
@@ -747,6 +743,155 @@ test.describe("production workflows with an isolated local PostgreSQL database",
     } finally {
       await employerSession.context.close();
       await candidateSession.context.close();
+    }
+  });
+  test("wallet CSV exports all owned USD and INR events and excludes another account's ledger", async ({
+    browser,
+  }) => {
+    const employer = await account("employer");
+    const candidate = await account("candidate");
+    const foreignEmployer = await account("employer");
+    const foreignCandidate = await account("candidate");
+    const usdRound = randomUUID();
+    const inrRound = randomUUID();
+    const foreignRound = randomUUID();
+    const records = [
+      {
+        id: usdRound,
+        employerId: employer.id,
+        candidateId: candidate.id,
+        currency: "USD",
+        amountCents: 4567,
+        feeCents: 365,
+        type: "paid",
+        ledgerCents: 4567,
+        createdAt: "2026-10-01T09:00:00.000Z",
+      },
+      {
+        id: inrRound,
+        employerId: employer.id,
+        candidateId: candidate.id,
+        currency: "INR",
+        amountCents: 123456,
+        feeCents: 9876,
+        type: "funded",
+        ledgerCents: 133332,
+        createdAt: "2026-10-02T10:30:00.000Z",
+      },
+      {
+        id: foreignRound,
+        employerId: foreignEmployer.id,
+        candidateId: foreignCandidate.id,
+        currency: "USD",
+        amountCents: 765432,
+        feeCents: 61235,
+        type: "funded",
+        ledgerCents: 826667,
+        createdAt: "2026-10-03T11:00:00.000Z",
+      },
+    ];
+    // These records exist only in the explicitly isolated test database.
+    // No provider endpoint or production payment state creates these fixtures.
+    for (const record of records) {
+      await database.query(
+        "INSERT INTO rounds(id,employer_id,candidate_id,title,kind,minutes,amount_cents,fee_cents,scheduled_at,meeting_url,terms,status,currency,payment_provider) VALUES($1,$2,$3,'CSV export test fixture','Introduction',30,$4,$5,now()-interval '1 day','https://example.test/interview','Test-only ledger records for CSV export verification.',$6,$7,$8)",
+        [
+          record.id,
+          record.employerId,
+          record.candidateId,
+          record.amountCents,
+          record.feeCents,
+          record.type,
+          record.currency,
+          record.currency === "INR" ? "razorpay" : "stripe",
+        ],
+      );
+      await database.query(
+        "INSERT INTO ledger(id,round_id,type,amount_cents,provider_ref,created_at) VALUES($1,$2,$3,$4,$5,$6)",
+        [
+          randomUUID(),
+          record.id,
+          record.type,
+          record.ledgerCents,
+          `e2e-csv-${runId}-${record.id}`,
+          record.createdAt,
+        ],
+      );
+    }
+    const history = Array.from({ length: 200 }, (_, index) => ({
+      id: randomUUID(),
+      createdAt: new Date(
+        Date.parse("2026-09-01T00:00:00.000Z") + index * 1000,
+      ).toISOString(),
+      providerRef: `e2e-csv-${runId}-history-${index}`,
+    }));
+    await database.query(
+      "INSERT INTO ledger(id,round_id,type,amount_cents,provider_ref,created_at) SELECT id,$1,'refunded',1,provider_ref,created_at FROM unnest($2::uuid[],$3::text[],$4::timestamptz[]) AS fixture(id,provider_ref,created_at)",
+      [
+        usdRound,
+        history.map((event) => event.id),
+        history.map((event) => event.providerRef),
+        history.map((event) => event.createdAt),
+      ],
+    );
+    const { context, page } = await session(browser, candidate);
+    try {
+      await page.goto("/workspace/wallet");
+      const exportButton = page.getByRole("button", {
+        name: "Export CSV",
+        exact: true,
+      });
+      await expect(exportButton).toBeEnabled();
+      await expect(page.getByRole("table").locator("tbody tr")).toHaveCount(
+        200,
+      );
+      const workspace = await browserWorkspace(page);
+      expect(workspace.status).toBe(200);
+      expect(workspace.body).toHaveProperty(
+        "ledger",
+        expect.arrayContaining([
+          expect.objectContaining({
+            roundId: inrRound,
+            amountCents: 133332,
+            currency: "INR",
+          }),
+          expect.objectContaining({
+            roundId: usdRound,
+            amountCents: 4567,
+            currency: "USD",
+          }),
+        ]),
+      );
+      const exported = await context.request.get("/api/ledger/export");
+      expect(exported.status()).toBe(200);
+      expect(exported.headers()["content-type"]).toContain("text/csv");
+      expect(exported.headers()["content-disposition"]).toContain(
+        "fairstage-payment-records.csv",
+      );
+      const serverCsv = await exported.text();
+      const [download] = await Promise.all([
+        page.waitForEvent("download", { timeout: 10000 }),
+        exportButton.click(),
+      ]);
+      expect(download.suggestedFilename()).toBe(
+        "fairstage-payment-records.csv",
+      );
+      const path = await download.path();
+      expect(path).not.toBeNull();
+      const csv = await readFile(path!, "utf8");
+      expect(csv).toBe(serverCsv);
+      expect(csv.trimEnd().split("\r\n")).toEqual([
+        '"Date","Event","Round ID","Amount","Currency"',
+        ...history.map(
+          (event) =>
+            `"${event.createdAt}","refunded","${usdRound}","0.01","USD"`,
+        ),
+        `"2026-10-01T09:00:00.000Z","paid","${usdRound}","45.67","USD"`,
+        `"2026-10-02T10:30:00.000Z","funded","${inrRound}","1333.32","INR"`,
+      ]);
+      expect(csv).not.toContain(foreignRound);
+    } finally {
+      await context.close();
     }
   });
   test("tenant boundaries and candidate permissions reject access to another account's records", async ({

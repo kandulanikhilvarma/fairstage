@@ -12,11 +12,11 @@ Full release results must show the exact source commit.
 | --- | --- | --- |
 | Full source lint | Passed | ESLint across the repository |
 | Type check | Passed | TypeScript with no emitted files |
-| Unit and API tests | 173 passed, 3 skipped locally | Five files; PGlite, test RSA keys, and mocked provider requests |
+| Unit and API tests | 177 passed, 3 skipped locally | Five files; PGlite, test RSA keys, and mocked provider requests |
 | PostgreSQL concurrency tests | Await CI | Three cross-connection ownership races need the CI database |
 | Production build | Passed | Next.js 16.3.8, version 1.1.0 |
 | Production dependency audit | 0 vulnerabilities | 35 production dependencies through npm audit |
-| Browser checks | 8 passed, 4 skipped locally | Public controls and accessibility; authenticated workflows need CI PostgreSQL |
+| Browser checks | 8 passed, 5 skipped locally | Public controls and accessibility; authenticated workflows need CI PostgreSQL |
 | Final visual confirmation | 3 targeted tests passed | Desktop and mobile controls, Google icon, navigation, and fresh-password fields |
 | Documentation linter | 0 errors | STE mechanical checks; technical and parser advisories reviewed |
 | Direct repository audit | Passed | YAML, fences, Mermaid syntax patterns, license removal, credential patterns, and Git identity |
@@ -54,6 +54,7 @@ Record the final results for each check:
 - Candidate withdrawal and employer application updates.
 - Private note ownership.
 - Calendar access and text escaping.
+- Full CSV export beyond the 200-row workspace limit.
 - Payment amount, currency, order, and recipient validation.
 - Completion from both participants before release.
 - Provider request retries and event replay.

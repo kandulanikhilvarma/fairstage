@@ -21,7 +21,6 @@ import {
   type Role,
 } from "@/lib/domain";
 import { preparationGuide } from "@/lib/preparation";
-import { csvCell } from "@/lib/export";
 
 const applicationStatuses = [
   ["reviewing", "Reviewing"],
@@ -539,6 +538,7 @@ export function WalletPage() {
   const { workspace: w, role, config } = useApp();
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [exporting, setExporting] = useState(false);
   if (!w) return null;
   const currencies = Array.from(
     new Set<Currency>(w.rounds.map((r) => r.currency ?? "USD")),
@@ -556,29 +556,34 @@ export function WalletPage() {
       setBusy(false);
     }
   }
-  function download() {
-    if (!w) return;
-    const rows = [
-      ["Date", "Event", "Round ID", "Amount", "Currency"],
-      ...w.ledger.map((l) => [
-        l.createdAt,
-        l.type,
-        l.roundId,
-        (l.amountCents / 100).toFixed(2),
-        l.currency ??
-          w.rounds.find((r) => r.id === l.roundId)?.currency ??
-          "USD",
-      ]),
-    ];
-    const csv = rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
-    const url = URL.createObjectURL(
-      new Blob([csv], { type: "text/csv;charset=utf-8" }),
-    );
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "fairstage-payment-records.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+  async function download() {
+    setExporting(true);
+    setMessage("");
+    try {
+      const response = await fetch("/api/ledger/export", {
+        credentials: "same-origin",
+        cache: "no-store",
+        signal: AbortSignal.timeout(20000),
+      });
+      if (!response.ok) {
+        const failure = await response.json().catch(() => ({}));
+        throw new Error(failure.error || "The payment export could not load.");
+      }
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "fairstage-payment-records.csv";
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "The payment export failed.",
+      );
+    } finally {
+      setExporting(false);
+    }
   }
   return (
     <>
@@ -588,13 +593,19 @@ export function WalletPage() {
       >
         <button
           className="button secondary"
-          onClick={download}
-          disabled={!w.ledger.length}
+          onClick={() => void download()}
+          disabled={exporting || !w.ledger.length}
+          aria-busy={exporting}
         >
           <Download size={16} />
-          Export CSV
+          {exporting ? "Export records…" : "Export CSV"}
         </button>
       </Heading>
+      {message && (
+        <div role="alert" className="notice error alert-space">
+          {message}
+        </div>
+      )}
       {currencies.map((currency) => (
         <div className="stats" key={currency}>
           <Stat
@@ -705,15 +716,6 @@ export function WalletPage() {
                 Payment account setup is not available for your country yet. You
                 can still manage your profile and applications.
               </p>
-            )}
-            {message && (
-              <div
-                role="alert"
-                className="notice error"
-                style={{ marginTop: 20 }}
-              >
-                {message}
-              </div>
             )}
           </div>
         </section>

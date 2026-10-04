@@ -14,22 +14,22 @@ The preparation guide uses local text when no model service exists.
 
 ## Modules
 
-| Module | Purpose |
-| --- | --- |
-| `lib/domain.ts` | Types, validation, prices, currencies, and permitted states |
-| `lib/security.ts` | Password hashes, sessions, origin checks, and rate limits |
-| `lib/auth.ts` | Email sign-in links and service availability |
-| `lib/google-auth.ts` | Google authorization code flow and ID token checks |
-| `lib/payments.ts` | Stripe account setup, checkout, release, and webhooks |
-| `lib/razorpay.ts` | Razorpay orders, payment checks, Route transfers, and webhooks |
-| `lib/db.ts` | PostgreSQL pool and transactions |
-| `lib/calendar.ts` | Calendar files for authorized interview participants |
-| `lib/templates.ts` | Two public interview formats |
-| `lib/ai.ts` | Optional model service with consent |
-| `app/api/[...path]/route.ts` | Public and protected business routes |
-| `app/api/auth` | Google and email sign-in routes |
-| `app/api/webhooks` | Signed provider events |
-| `db` | Ordered SQL migrations |
+| Module                       | Purpose                                                        |
+| ---------------------------- | -------------------------------------------------------------- |
+| `lib/domain.ts`              | Types, validation, prices, currencies, and permitted states    |
+| `lib/security.ts`            | Password hashes, sessions, origin checks, and rate limits      |
+| `lib/auth.ts`                | Email sign-in links and service availability                   |
+| `lib/google-auth.ts`         | Google authorization code flow and ID token checks             |
+| `lib/payments.ts`            | Stripe account setup, checkout, release, and webhooks          |
+| `lib/razorpay.ts`            | Razorpay orders, payment checks, Route transfers, and webhooks |
+| `lib/db.ts`                  | PostgreSQL pool and transactions                               |
+| `lib/calendar.ts`            | Calendar files for authorized interview participants           |
+| `lib/templates.ts`           | Two public interview formats                                   |
+| `lib/ai.ts`                  | Optional model service with consent                            |
+| `app/api/[...path]/route.ts` | Public and protected business routes                           |
+| `app/api/auth`               | Google and email sign-in routes                                |
+| `app/api/webhooks`           | Signed provider events                                         |
+| `db`                         | Ordered SQL migrations                                         |
 
 ## Authentication
 
@@ -58,6 +58,7 @@ The account page needs an explicit confirmation POST to consume a link.
 The link must open in the requesting browser.
 The transaction consumes each link once.
 Verified accounts keep their stored role and credentials.
+
 The first verified claim revokes an unverified registrant's password, sessions, and recovery tokens.
 The claim clears untrusted profile values and uses the proven owner's name and role.
 Financial mappings remain intact.
@@ -79,6 +80,7 @@ The round currency selects the provider: INR for Razorpay and USD for Stripe.
 Each participant can save a private note.
 Calendar downloads require participation in the round.
 Account exports contain records within the authenticated user's scope.
+The payment CSV queries the complete authorized ledger separately from the capped workspace view.
 
 Ledger entries record provider events with unique references.
 Disputes stop payment release. Audit events record the actor and action.

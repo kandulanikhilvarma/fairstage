@@ -1,6 +1,6 @@
 # API guide
 
-The API uses JSON except for calendar files and provider webhooks.
+The API uses JSON except for calendar files, CSV exports, and provider webhooks.
 JSON responses contain `{ "error": "..." }` on failure.
 Protected routes need the `fs_session` cookie.
 Successful password, Google, and email-link sign-in create a 7-day session.
@@ -33,7 +33,19 @@ The `payments` flag checks Stripe credentials and `LIVE_PAYMENTS_ENABLED=true`.
 Production Stripe credentials must start with `sk_live_`.
 Production Stripe actions also need `STRIPE_PLATFORM_COUNTRY` outside India and `STRIPE_FUNDS_FLOW_APPROVED=true`.
 Signed webhook reconciliation does not depend on the new-action approval flags.
+
 The `razorpay` flag needs both payment and Route enablement, live credentials, and a webhook secret.
+
+## Complete payment export
+
+`GET /api/ledger/export` returns all payment events for rounds that involve the signed-in account.
+The CSV has no row limit and orders events by date and record ID.
+The columns are Date, Event, Round ID, Amount, and Currency.
+Amounts use two decimal places and keep their USD or INR currency.
+
+The response downloads as `fairstage-payment-records.csv` with `Cache-Control: no-store`.
+The durable rate limit permits five exports for each account each hour.
+The export excludes provider references and account credentials.
 
 ## Sign-in and email ownership
 
@@ -114,7 +126,9 @@ The account export has no row limit.
 The export includes `user`, `applications`, `rounds`, `jobs`, `ledger`, `disputes`, `privateNotes`, and `exportedAt`.
 The export omits password hashes and session tokens.
 Only related records and the current account's private notes appear.
-The wallet creates its CSV file in the client from workspace ledger data.
+
+The wallet downloads its complete CSV from `/api/ledger/export`.
+The export does not use the capped workspace ledger.
 
 Profile input contains `name`, `company`, `bio`, and a two-letter uppercase `country`.
 Optional fields are `headline`, `skills`, `portfolioUrl`, `resumeUrl`, and `timezone`.

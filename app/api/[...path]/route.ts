@@ -38,6 +38,7 @@ import { applicationSelect, jobSelect, roundSelect } from "@/lib/queries";
 import { authConfig, authOrigin } from "@/lib/auth";
 import { lockEmailIdentity, claimVerifiedAccount } from "@/lib/auth-ownership";
 import { calendarEvent } from "@/lib/calendar";
+import { csvCell } from "@/lib/export";
 import {
   createRazorpayOrder,
   verifyRazorpayPayment,
@@ -487,6 +488,38 @@ async function handle(request: Request, context: Context) {
     if (!rows[0]) throw new HttpError(404, "The application is not available.");
     await audit(user.id, "application_" + status, id);
     return ok({ message: "Application updated." });
+  }
+  if (route === "ledger/export" && method === "GET") {
+    await rateLimit("ledger-export:" + user.id, 5, 3600);
+    const entries = await query<{
+      roundId: string;
+      type: string;
+      amountCents: number;
+      currency: string;
+      createdAt: Date;
+    }>(
+      'SELECT l.round_id AS "roundId",l.type,l.amount_cents AS "amountCents",r.currency,l.created_at AS "createdAt" FROM ledger l JOIN rounds r ON r.id=l.round_id WHERE r.employer_id=$1 OR r.candidate_id=$1 ORDER BY l.created_at ASC,l.id ASC',
+      [user.id],
+    );
+    const rows = [
+      ["Date", "Event", "Round ID", "Amount", "Currency"],
+      ...entries.map((entry) => [
+        new Date(entry.createdAt).toISOString(),
+        entry.type,
+        entry.roundId,
+        (entry.amountCents / 100).toFixed(2),
+        entry.currency,
+      ]),
+    ];
+    const csv = rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
+    return new NextResponse(csv + "\r\n", {
+      headers: {
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition":
+          'attachment; filename="fairstage-payment-records.csv"',
+        "Cache-Control": "no-store",
+      },
+    });
   }
   if (route === "account/export" && method === "GET") {
     await rateLimit("export:" + user.id, 5, 3600);
