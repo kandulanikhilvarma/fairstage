@@ -24,6 +24,7 @@ export interface User {
   bio: string;
   country: string;
   verified: boolean;
+  operator?: boolean;
   connectId?: string;
   connectReady?: boolean;
   razorpayReady?: boolean;
@@ -107,7 +108,28 @@ export interface Workspace {
   applications: Application[];
   ledger: LedgerEntry[];
   disputes: Dispute[];
+  summary?: WorkspaceSummary;
+  pages?: Record<WorkspaceCollection, PageInfo>;
 }
+export type WorkspaceCollection =
+  "rounds" | "jobs" | "applications" | "ledger" | "disputes";
+export interface PageInfo {
+  nextCursor: string | null;
+  total: number;
+}
+export interface RecordPage<T> {
+  items: T[];
+  page: PageInfo;
+}
+export interface WorkspaceSummary {
+  counts: Record<WorkspaceCollection, number>;
+  roundStates: Record<RoundStatus, number>;
+  activeRounds: number;
+  openJobs: number;
+  openDisputes: number;
+  currencies: { currency: Currency; paidCents: number; fundedCents: number }[];
+}
+export type PublicJob = Omit<Job, "employerId"> & { applied?: boolean };
 
 export const defaults = [
   { kind: roundKinds[0], minutes: 30, cents: 1500 },

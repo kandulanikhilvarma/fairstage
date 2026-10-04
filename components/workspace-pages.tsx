@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -19,6 +19,9 @@ import {
   type Application,
   type Currency,
   type Role,
+  type RecordPage,
+  type RoundStatus,
+  type WorkspaceCollection,
 } from "@/lib/domain";
 import { preparationGuide } from "@/lib/preparation";
 
@@ -42,6 +45,40 @@ function profileLink(value?: string) {
   }
 }
 
+function CollectionPager({
+  collection,
+  label,
+}: {
+  collection: WorkspaceCollection;
+  label: string;
+}) {
+  const { workspace, loadMore, pageBusy, pageErrors } = useApp();
+  const page = workspace?.pages?.[collection];
+  if (!workspace || !page) return null;
+  return (
+    <div className="panel-body">
+      <p role="status">
+        {workspace[collection].length} of {page.total} {label} loaded
+      </p>
+      {pageErrors[collection] && (
+        <p className="notice error" role="alert">
+          {pageErrors[collection]}
+        </p>
+      )}
+      {page.nextCursor && (
+        <button
+          className="button secondary"
+          disabled={pageBusy[collection]}
+          aria-busy={pageBusy[collection]}
+          onClick={() => void loadMore(collection)}
+        >
+          {pageBusy[collection] ? "Load records…" : `Load more ${label}`}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function ApplicationsList({
   applications,
   role,
@@ -55,6 +92,95 @@ function ApplicationsList({
 }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
+  const [searchResults, setSearchResults] =
+    useState<RecordPage<Application> | null>(null);
+  const [searchBusy, setSearchBusy] = useState(false);
+  const [searchError, setSearchError] = useState("");
+  const [resultKey, setResultKey] = useState("");
+  const [searchRetry, setSearchRetry] = useState(0);
+  const searchGeneration = useRef(0);
+  const searchPending = useRef(false);
+  const searched = !!search.trim() || status !== "all";
+  const params = new URLSearchParams({ pageSize: "50" });
+  if (search.trim()) params.set("q", search.trim());
+  if (status !== "all") params.set("status", status);
+  const queryKey = params.toString();
+  useEffect(() => {
+    const version = ++searchGeneration.current;
+    if (!searched) return;
+    let active = true;
+    const timer = window.setTimeout(async () => {
+      setSearchBusy(true);
+      setSearchError("");
+      try {
+        const result = await api<RecordPage<Application>>(
+          `workspace/applications?${queryKey}`,
+        );
+        if (active && version === searchGeneration.current) {
+          setSearchResults(result);
+          setResultKey(queryKey);
+        }
+      } catch (error) {
+        if (active && version === searchGeneration.current)
+          setSearchError(
+            error instanceof Error
+              ? error.message
+              : "The applications could not load. Try again.",
+          );
+      } finally {
+        if (active && version === searchGeneration.current)
+          setSearchBusy(false);
+      }
+    }, 250);
+    return () => {
+      window.clearTimeout(timer);
+      active = false;
+    };
+  }, [searched, queryKey, applications, searchRetry]);
+  async function loadSearch() {
+    if (
+      !searchResults?.page.nextCursor ||
+      searchPending.current ||
+      queryKey !== resultKey
+    )
+      return;
+    const version = searchGeneration.current;
+    searchPending.current = true;
+    setSearchBusy(true);
+    setSearchError("");
+    try {
+      const result = await api<RecordPage<Application>>(
+        `workspace/applications?${queryKey}&cursor=${encodeURIComponent(searchResults.page.nextCursor)}`,
+      );
+      if (version === searchGeneration.current)
+        setSearchResults((current) =>
+          current
+            ? {
+                items: [
+                  ...current.items,
+                  ...result.items.filter(
+                    (item) =>
+                      !current.items.some(
+                        (previous) => previous.id === item.id,
+                      ),
+                  ),
+                ],
+                page: result.page,
+              }
+            : result,
+        );
+    } catch (error) {
+      if (version === searchGeneration.current)
+        setSearchError(
+          error instanceof Error
+            ? error.message
+            : "The next page could not load. Try again.",
+        );
+    } finally {
+      searchPending.current = false;
+      if (version === searchGeneration.current) setSearchBusy(false);
+    }
+  }
   const filtered = applications.filter((a) => {
     const words = [
       a.candidateName,
@@ -71,6 +197,11 @@ function ApplicationsList({
       words.includes(search.trim().toLowerCase())
     );
   });
+  const results = searched
+    ? resultKey === queryKey
+      ? (searchResults?.items ?? [])
+      : []
+    : filtered;
   return (
     <section className="panel">
       <div className="panel-heading">
@@ -118,17 +249,38 @@ function ApplicationsList({
             </select>
           </div>
         </div>
-        <p role="status">
-          {filtered.length} of {applications.length} applications
-        </p>
-        {!filtered.length && (
-          <p>
-            {applications.length
-              ? "No applications match these filters."
-              : "No applications yet. A submitted application will appear here."}
+        {searched && (
+          <p role="status">
+            {searchBusy || (resultKey !== queryKey && !searchError)
+              ? "Search applications…"
+              : resultKey === queryKey
+                ? `${results.length} of ${searchResults?.page.total ?? 0} matching applications loaded`
+                : "The search could not complete."}
           </p>
         )}
-        {filtered.map((a) => (
+        {searchError && searched && (
+          <p role="alert" className="notice error">
+            {searchError}
+            <button
+              type="button"
+              className="button secondary small"
+              disabled={searchBusy}
+              onClick={() => setSearchRetry((value) => value + 1)}
+            >
+              Retry search
+            </button>
+          </p>
+        )}
+        {!results.length &&
+          (!searched || !searchBusy) &&
+          (!searched || resultKey === queryKey) && (
+            <p>
+              {applications.length
+                ? "No applications match these filters."
+                : "No applications yet. A submitted application will appear here."}
+            </p>
+          )}
+        {results.map((a) => (
           <article
             className="round-item"
             key={a.id}
@@ -253,7 +405,24 @@ function ApplicationsList({
             </div>
           </article>
         ))}
+        {searched &&
+          resultKey === queryKey &&
+          searchResults?.page.nextCursor && (
+            <button
+              className="button secondary"
+              disabled={searchBusy}
+              aria-busy={searchBusy}
+              onClick={() => void loadSearch()}
+            >
+              {searchBusy
+                ? "Load applications…"
+                : "Load more matching applications"}
+            </button>
+          )}
       </div>
+      {!searched && (
+        <CollectionPager collection="applications" label="applications" />
+      )}
     </section>
   );
 }
@@ -523,6 +692,7 @@ export function WorkspaceJobs() {
               )}
             </div>
           </section>
+          <CollectionPager collection="jobs" label="roles" />
           <ApplicationsList
             applications={w.applications}
             role={role}
@@ -540,9 +710,9 @@ export function WalletPage() {
   const [busy, setBusy] = useState(false);
   const [exporting, setExporting] = useState(false);
   if (!w) return null;
-  const currencies = Array.from(
-    new Set<Currency>(w.rounds.map((r) => r.currency ?? "USD")),
-  );
+  const currencies =
+    w.summary?.currencies.map((total) => total.currency) ??
+    Array.from(new Set<Currency>(w.rounds.map((r) => r.currency ?? "USD")));
   if (!currencies.length) currencies.push(config.currency);
   async function connect() {
     setBusy(true);
@@ -611,12 +781,14 @@ export function WalletPage() {
           <Stat
             label={`Candidate pay released · ${currency}`}
             value={money(
-              w.rounds
-                .filter(
-                  (r) =>
-                    r.status === "paid" && (r.currency ?? "USD") === currency,
-                )
-                .reduce((n, r) => n + r.amountCents, 0),
+              w.summary?.currencies.find((total) => total.currency === currency)
+                ?.paidCents ??
+                w.rounds
+                  .filter(
+                    (r) =>
+                      r.status === "paid" && (r.currency ?? "USD") === currency,
+                  )
+                  .reduce((n, r) => n + r.amountCents, 0),
               currency,
             )}
             note="Gross transfers before reversals"
@@ -624,13 +796,15 @@ export function WalletPage() {
           <Stat
             label={`Candidate pay funded · ${currency}`}
             value={money(
-              w.rounds
-                .filter(
-                  (r) =>
-                    ["funded", "completed"].includes(r.status) &&
-                    (r.currency ?? "USD") === currency,
-                )
-                .reduce((n, r) => n + r.amountCents, 0),
+              w.summary?.currencies.find((total) => total.currency === currency)
+                ?.fundedCents ??
+                w.rounds
+                  .filter(
+                    (r) =>
+                      ["funded", "completed"].includes(r.status) &&
+                      (r.currency ?? "USD") === currency,
+                  )
+                  .reduce((n, r) => n + r.amountCents, 0),
               currency,
             )}
             note="Completion or review pending"
@@ -770,6 +944,7 @@ export function WalletPage() {
           </div>
         )}
       </section>
+      <CollectionPager collection="ledger" label="payment events" />
       <p className="small-text muted">
         Funding events include the employer fee. Release events show candidate
         pay. The app does not deduct a salary.
@@ -1178,7 +1353,7 @@ export function Preparation() {
 export function Analytics() {
   const { workspace: w, config } = useApp();
   if (!w) return null;
-  const states = [
+  const states: RoundStatus[] = [
     "offered",
     "accepted",
     "funded",
@@ -1188,9 +1363,9 @@ export function Analytics() {
     "cancelled",
   ];
   const released = w.rounds.filter((r) => r.status === "paid");
-  const currencies = Array.from(
-    new Set<Currency>(released.map((r) => r.currency ?? "USD")),
-  );
+  const currencies =
+    w.summary?.currencies.map((total) => total.currency) ??
+    Array.from(new Set<Currency>(released.map((r) => r.currency ?? "USD")));
   if (!currencies.length) currencies.push(config.currency);
   const disputes = w.disputes.filter((d) => d.status === "open");
   return (
@@ -1202,12 +1377,12 @@ export function Analytics() {
       <div className="stats">
         <Stat
           label="Recorded rounds"
-          value={String(w.rounds.length)}
+          value={String(w.summary?.counts.rounds ?? w.rounds.length)}
           note="Across all states"
         />
         <Stat
           label="Released rounds"
-          value={String(released.length)}
+          value={String(w.summary?.roundStates.paid ?? released.length)}
           note="Both people confirmed completion"
         />
         {currencies.map((currency) => (
@@ -1215,9 +1390,11 @@ export function Analytics() {
             key={currency}
             label={`Pay released · ${currency}`}
             value={money(
-              released
-                .filter((r) => (r.currency ?? "USD") === currency)
-                .reduce((n, r) => n + r.amountCents, 0),
+              w.summary?.currencies.find((total) => total.currency === currency)
+                ?.paidCents ??
+                released
+                  .filter((r) => (r.currency ?? "USD") === currency)
+                  .reduce((n, r) => n + r.amountCents, 0),
               currency,
             )}
             note="Candidate amount before reversals"
@@ -1231,7 +1408,10 @@ export function Analytics() {
           </div>
           <div className="panel-body chart-bars">
             {states.map((s) => {
-              const count = w.rounds.filter((r) => r.status === s).length;
+              const count =
+                w.summary?.roundStates[s] ??
+                w.rounds.filter((r) => r.status === s).length;
+              const total = w.summary?.counts.rounds ?? w.rounds.length;
               return (
                 <div key={s}>
                   <div className="chart-label">
@@ -1245,7 +1425,7 @@ export function Analytics() {
                   <div className="chart-track" aria-hidden="true">
                     <span
                       style={{
-                        width: `${w.rounds.length ? (count / w.rounds.length) * 100 : 0}%`,
+                        width: `${total ? (count / total) * 100 : 0}%`,
                       }}
                     />
                   </div>
@@ -1256,7 +1436,7 @@ export function Analytics() {
         </section>
         <section className="panel">
           <div className="panel-heading">
-            <h2>Open disputes</h2>
+            <h2>Open disputes{w.summary && ` · ${w.summary.openDisputes}`}</h2>
           </div>
           <div className="panel-body">
             {disputes.length ? (
@@ -1271,7 +1451,11 @@ export function Analytics() {
                 </div>
               ))
             ) : (
-              <p>No disputes in your current records.</p>
+              <p>
+                {w.summary?.openDisputes
+                  ? "Load more disputes to see earlier open cases."
+                  : "No open disputes in your records."}
+              </p>
             )}
             <p className="result-note">
               Disputes need a support review. The assistant cannot resolve them.
@@ -1280,6 +1464,7 @@ export function Analytics() {
               Review the pay policy <ArrowRight size={15} />
             </Link>
           </div>
+          <CollectionPager collection="disputes" label="disputes" />
         </section>
       </div>
     </>

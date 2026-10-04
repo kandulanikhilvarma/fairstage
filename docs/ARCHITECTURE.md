@@ -23,6 +23,10 @@ The preparation guide uses local text when no model service exists.
 | `lib/payments.ts`            | Stripe account setup, checkout, release, and webhooks          |
 | `lib/razorpay.ts`            | Razorpay orders, payment checks, Route transfers, and webhooks |
 | `lib/db.ts`                  | PostgreSQL pool and transactions                               |
+| `lib/queries.ts`             | Stable tenant pages and summaries over complete histories      |
+| `lib/operator.ts`            | Restricted case review and append-only audit notes             |
+| `lib/maintenance.ts`         | Authorized cleanup of expired temporary records                |
+| `lib/readiness.ts`           | Configuration checks without credential values                 |
 | `lib/calendar.ts`            | Calendar files for authorized interview participants           |
 | `lib/templates.ts`           | Two public interview formats                                   |
 | `lib/ai.ts`                  | Optional model service with consent                            |
@@ -80,7 +84,20 @@ The round currency selects the provider: INR for Razorpay and USD for Stripe.
 Each participant can save a private note.
 Calendar downloads require participation in the round.
 Account exports contain records within the authenticated user's scope.
-The payment CSV queries the complete authorized ledger separately from the capped workspace view.
+The workspace loads bounded pages with timestamp and UUID cursors.
+The server computes totals over the complete authorized history.
+The payment CSV queries the complete authorized ledger separately from the paginated workspace view.
+
+Operator access needs a verified session and an exact server allowlist match.
+The server checks the session again inside each review transaction.
+An advisory lock serializes the first case review.
+A version check rejects a stale edit.
+Case notes remain separate from payment records and participant disputes.
+
+The maintenance job uses a separate Bearer secret and a transaction lock.
+Each run removes at most 1000 rows from each temporary table after a one-day expiry grace period.
+The job preserves permanent account, payment, provider-event, and audit records.
+The database records successful and failed runs without private error details.
 
 Ledger entries record provider events with unique references.
 Disputes stop payment release. Audit events record the actor and action.

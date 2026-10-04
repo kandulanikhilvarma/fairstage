@@ -15,6 +15,7 @@ import {
   LogOut,
   Plus,
   Settings,
+  ShieldCheck,
   Sparkles,
   Wallet,
 } from "lucide-react";
@@ -93,6 +94,12 @@ export function WorkspaceApp() {
           ))}
         </nav>
         <div className="sidebar-bottom">
+          {app.workspace?.user.operator && (
+            <Link href="/operator">
+              <ShieldCheck size={17} />
+              Operator console
+            </Link>
+          )}
           <Link href="/policy">
             <CircleHelp size={17} />
             Pay policy and help <ArrowUpRight size={13} />
@@ -253,14 +260,18 @@ export function Stat({
 function Overview() {
   const { workspace: w, role, config } = useApp();
   if (!w) return null;
-  const currencies = [...new Set(w.rounds.map((r) => r.currency || "USD"))];
+  const currencies = w.summary
+    ? w.summary.currencies.map((total) => total.currency)
+    : [...new Set(w.rounds.map((r) => r.currency || "USD"))];
   if (!currencies.length) currencies.push(config.currency);
   const paid = currencies
     .map((c) =>
       money(
-        w.rounds
-          .filter((r) => r.status === "paid" && (r.currency || "USD") === c)
-          .reduce((s, r) => s + r.amountCents, 0),
+        w.summary?.currencies.find((total) => total.currency === c)
+          ?.paidCents ??
+          w.rounds
+            .filter((r) => r.status === "paid" && (r.currency || "USD") === c)
+            .reduce((s, r) => s + r.amountCents, 0),
         c,
       ),
     )
@@ -268,13 +279,15 @@ function Overview() {
   const committed = currencies
     .map((c) =>
       money(
-        w.rounds
-          .filter(
-            (r) =>
-              ["funded", "completed"].includes(r.status) &&
-              (r.currency || "USD") === c,
-          )
-          .reduce((s, r) => s + r.amountCents, 0),
+        w.summary?.currencies.find((total) => total.currency === c)
+          ?.fundedCents ??
+          w.rounds
+            .filter(
+              (r) =>
+                ["funded", "completed"].includes(r.status) &&
+                (r.currency || "USD") === c,
+            )
+            .reduce((s, r) => s + r.amountCents, 0),
         c,
       ),
     )
@@ -316,8 +329,8 @@ function Overview() {
         />
         <Stat
           label="Active rounds"
-          value={String(active.length)}
-          note={`${w.disputes.filter((d) => d.status === "open").length} open disputes`}
+          value={String(w.summary?.activeRounds ?? active.length)}
+          note={`${w.summary?.openDisputes ?? w.disputes.filter((d) => d.status === "open").length} open disputes`}
         />
       </div>
       <section className="panel">

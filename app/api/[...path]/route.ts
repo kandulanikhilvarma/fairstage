@@ -34,7 +34,16 @@ import {
 } from "@/lib/payments";
 import { sendToken } from "@/lib/mail";
 import { assistant } from "@/lib/ai";
-import { applicationSelect, jobSelect, roundSelect } from "@/lib/queries";
+import {
+  applicationSelect,
+  jobSelect,
+  roundSelect,
+  collections,
+  publicJobsPage,
+  workspacePage,
+  workspaceSummary,
+} from "@/lib/queries";
+import { isOperator } from "@/lib/operator";
 import { authConfig, authOrigin } from "@/lib/auth";
 import { lockEmailIdentity, claimVerifiedAccount } from "@/lib/auth-ownership";
 import { calendarEvent } from "@/lib/calendar";
@@ -45,7 +54,7 @@ import {
   releaseRazorpayRound,
   razorpayReadiness,
 } from "@/lib/razorpay";
-import type { Round } from "@/lib/domain";
+import type { Round, WorkspaceCollection } from "@/lib/domain";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -78,15 +87,15 @@ async function handle(request: Request, context: Context) {
   if (route === "health" && method === "GET") {
     if (!process.env.DATABASE_URL)
       return ok(
-        { status: "unavailable", mode: "production", version: "1.1.0" },
+        { status: "unavailable", mode: "production", version: "1.2.0" },
         503,
       );
     try {
       await query("SELECT 1");
-      return ok({ status: "ok", mode: "production", version: "1.1.0" });
+      return ok({ status: "ok", mode: "production", version: "1.2.0" });
     } catch {
       return ok(
-        { status: "unavailable", mode: "production", version: "1.1.0" },
+        { status: "unavailable", mode: "production", version: "1.2.0" },
         503,
       );
     }
@@ -96,13 +105,18 @@ async function handle(request: Request, context: Context) {
       503,
       "The account service is temporarily unavailable. Please try again later.",
     );
-  if (route === "jobs" && method === "GET")
-    return ok({
-      jobs: await query(
-        jobSelect +
-          " WHERE j.status='open' ORDER BY j.created_at DESC LIMIT 100",
-      ),
-    });
+  if (route === "jobs" && method === "GET") {
+    let candidateId: string | undefined;
+    try {
+      const viewer = await sessionUser();
+      if (viewer.role === "candidate") candidateId = viewer.id;
+    } catch (error) {
+      if (!(error instanceof HttpError) || error.status !== 401) throw error;
+    }
+    return ok(
+      await publicJobsPage(new URL(request.url).searchParams, candidateId),
+    );
+  }
   if (method !== "GET") checkOrigin(request);
   if (route.startsWith("auth/") && method === "POST") {
     const ip =
@@ -294,29 +308,49 @@ async function handle(request: Request, context: Context) {
     });
   }
   if (route === "workspace" && method === "GET") {
-    const [rounds, jobs, applications, ledger, disputes] = await Promise.all([
-      query(
-        `${roundSelect} WHERE r.employer_id=$1 OR r.candidate_id=$1 ORDER BY r.created_at DESC LIMIT 200`,
-        [user.id],
+    const params = new URL(request.url).searchParams;
+    const bounded = params.has("pageSize");
+    if (["cursor", "q", "status", "category"].some((key) => params.has(key)))
+      throw new HttpError(
+        400,
+        "Use a collection route for search and page cursors.",
+      );
+    const [pages, summary] = await Promise.all([
+      Promise.all(
+        collections.map((collection) =>
+          workspacePage(
+            user.id,
+            collection,
+            params,
+            bounded ? 50 : collection === "jobs" ? 100 : 200,
+            bounded ? 100 : 200,
+          ),
+        ),
       ),
-      query(
-        `${jobSelect} WHERE j.employer_id=$1 ORDER BY j.created_at DESC LIMIT 100`,
-        [user.id],
-      ),
-      query(
-        `${applicationSelect} WHERE j.employer_id=$1 OR a.candidate_id=$1 ORDER BY a.created_at DESC LIMIT 200`,
-        [user.id],
-      ),
-      query(
-        `SELECT l.id,l.round_id AS "roundId",l.type,l.amount_cents AS "amountCents",r.currency,l.created_at AS "createdAt" FROM ledger l JOIN rounds r ON r.id=l.round_id WHERE r.employer_id=$1 OR r.candidate_id=$1 ORDER BY l.created_at DESC LIMIT 200`,
-        [user.id],
-      ),
-      query(
-        `SELECT d.id,d.round_id AS "roundId",d.reason,d.status,d.created_at AS "createdAt" FROM disputes d JOIN rounds r ON r.id=d.round_id WHERE r.employer_id=$1 OR r.candidate_id=$1 ORDER BY d.created_at DESC LIMIT 200`,
-        [user.id],
-      ),
+      workspaceSummary(user.id),
     ]);
-    return ok({ user, rounds, jobs, applications, ledger, disputes });
+    const data = Object.fromEntries(
+      collections.map((collection, index) => [collection, pages[index].items]),
+    );
+    return ok({
+      user: { ...user, operator: isOperator(user) },
+      ...data,
+      summary,
+      pages: Object.fromEntries(
+        collections.map((collection, index) => [collection, pages[index].page]),
+      ),
+    });
+  }
+  if (path[0] === "workspace" && path.length === 2 && method === "GET") {
+    if (!collections.includes(path[1] as WorkspaceCollection))
+      throw new HttpError(404, "The workspace collection does not exist.");
+    return ok(
+      await workspacePage(
+        user.id,
+        path[1] as WorkspaceCollection,
+        new URL(request.url).searchParams,
+      ),
+    );
   }
   if (route === "profile" && method === "POST") {
     const input = profileSchema.parse(await requestJson(request));
