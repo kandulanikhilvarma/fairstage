@@ -151,9 +151,10 @@ The app has no automatic candidate score or hire decision.
 ## Limits
 
 Workspace queries return bounded result sets.
-The release has no pagination interface or team membership model.
+Stable cursor pages cover the workspace collections and public roles.
+The release has no team membership model.
 The account export can include more records than the workspace view.
-High-volume deployments need pagination and export load checks.
+High-volume deployments need query and export load checks.
 
 Route account approval needs an operator process.
 The app does not accept arbitrary payout account identifiers from candidates.

@@ -1,13 +1,13 @@
 {
-  "releaseVersion": "1.1.0",
+  "releaseVersion": "1.2.0",
   "status": "deployed-services-unavailable",
-  "checkedAt": "2026-10-04T10:17:24.589Z",
-  "sourceCommit": "d9f477ee13b80a0ad57ccc29246a847f7cc9af0a",
+  "checkedAt": "2026-10-05T07:01:42.267Z",
+  "sourceCommit": "87b9140c1b0830cfc243521b42218cfc16b815bb",
   "url": "https://fairstage.vercel.app",
   "health": {
     "status": "unavailable",
     "mode": "production",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "httpStatus": 503
   },
   "configuration": {
@@ -58,11 +58,19 @@
       "status": 200
     },
     {
+      "path": "/operator",
+      "status": 200
+    },
+    {
       "path": "/workspace",
       "status": 200
     },
     {
       "path": "/workspace/interviews",
+      "status": 200
+    },
+    {
+      "path": "/workspace/jobs",
       "status": 200
     },
     {
@@ -98,38 +106,22 @@
     {
       "path": "/api/webhooks/razorpay",
       "status": 503
+    },
+    {
+      "path": "/api/operator/session",
+      "status": 503
+    },
+    {
+      "path": "/api/internal/maintenance",
+      "status": 401
     }
   ],
   "activationGates": [
     "Migrated PostgreSQL database and secure deployment connection",
     "Google OAuth credentials or verified email sender",
+    "Verified operator allowlist and maintenance secret",
     "Razorpay merchant and Route approval with verified linked accounts",
     "USD disabled for the India operator",
     "Commercial hosting plan before a paid launch"
-  ],
-  "deployment": {
-    "provider": "Vercel",
-    "githubDeploymentId": 6839699634,
-    "environment": "Production",
-    "state": "success",
-    "sourceCommit": "d9f477ee13b80a0ad57ccc29246a847f7cc9af0a",
-    "completedAt": "2026-10-04T10:16:27Z",
-    "url": "https://fairstage-g0gp76tcb-kandula.vercel.app",
-    "projectResultUrl": "https://vercel.com/kandula/fairstage/3CYhHT3kz3ubeH1VX81DbEcshwBw",
-    "verificationMethod": "Connected GitHub deployment record and public HTTP checks; Vercel MCP team access unavailable"
-  },
-  "ci": {
-    "pullRequest": 11,
-    "verifiedHead": "15b2ccfb31999d726fd21044939cfe07c8317da1",
-    "runId": 37194633779,
-    "url": "https://github.com/kandulanikhilvarma/fairstage/actions/runs/37194633779",
-    "conclusion": "success",
-    "unitTestsPassed": 180,
-    "browserTestsPassed": 13,
-    "migrationsApplied": 4,
-    "mainRunId": 37194805287,
-    "mainRunUrl": "https://github.com/kandulanikhilvarma/fairstage/actions/runs/37194805287",
-    "mainConclusion": "success"
-  },
-  "evidenceScope": "Application release observed before the later documentation commit"
+  ]
 }

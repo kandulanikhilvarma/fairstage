@@ -169,8 +169,9 @@ Use an approved, audited repair procedure after verification of the provider out
 
 ## Manual dispute review
 
-The release has no operator adjudication console or automatic dispute decision.
-Use restricted database access and the approved provider Dashboard.
+The review console records decisions but cannot clear the underlying dispute or move funds.
+The release has no automatic dispute decision.
+Use the restricted procedure below and the approved provider Dashboard for financial corrections.
 An open manual dispute blocks release even after a provider dispute ends in the platform's favor.
 Razorpay provider dispute events remain in review until an operator resolves the case.
 
@@ -232,7 +233,8 @@ The owner must review financial retention obligations for the operating company.
 
 Delete expired sessions, auth tokens, and obsolete rate-limit rows through a scheduled maintenance job.
 The API refuses expired records before maintenance removes them.
-The application does not create that scheduled maintenance service.
+The daily Vercel job needs its configured secret and a reachable migrated database.
+Check the latest result through the operator health API.
 
 Check a privacy request through the approved support process.
 Use the account export for authorized workspace records.

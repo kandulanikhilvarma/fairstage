@@ -1,8 +1,8 @@
 # Production deployment record
 
 The production app uses a connected GitHub repository and Vercel project.
-The application release reached production on 4 October 2026.
-The public checks confirmed version 1.1.0 and the production runtime.
+The application release reached production on 5 October 2026 in India.
+The public checks confirmed version 1.2.0 and the production runtime.
 Accounts and payment services remain unavailable until the owner completes the activation requirements.
 
 | Item | Target |
@@ -19,25 +19,26 @@ Accounts and payment services remain unavailable until the owner completes the a
 
 | Evidence | Observed result |
 | --- | --- |
-| Application source | `d9f477ee13b80a0ad57ccc29246a847f7cc9af0a` |
-| Verified PR head | `15b2ccfb31999d726fd21044939cfe07c8317da1` |
-| Release PR | [Merged PR #11](https://github.com/kandulanikhilvarma/fairstage/pull/11) |
-| Release CI | [Successful run](https://github.com/kandulanikhilvarma/fairstage/actions/runs/37194633779) |
-| Vercel production result | [Completed deployment](https://vercel.com/kandula/fairstage/3CYhHT3kz3ubeH1VX81DbEcshwBw) |
-| GitHub deployment | `6839699634`; Production; successful source mapping |
-| Deployment URL | [fairstage-g0gp76tcb-kandula.vercel.app](https://fairstage-g0gp76tcb-kandula.vercel.app) |
-| Public check time | `2026-10-04T10:17:24.589Z` |
-| Public pages | 16 paths returned HTTP 200 |
-| Health | HTTP 503; `status: unavailable`, `mode: production`, `version: 1.1.0` |
+| Application source | `87b9140c1b0830cfc243521b42218cfc16b815bb` |
+| Verified PR head | `96d45717a72283325702fef7a90d3526083252fa` |
+| Release PR | [Merged PR #13](https://github.com/kandulanikhilvarma/fairstage/pull/13) |
+| Release CI | [Successful run](https://github.com/kandulanikhilvarma/fairstage/actions/runs/37229771332) |
+| Main CI | [Successful run](https://github.com/kandulanikhilvarma/fairstage/actions/runs/37229975321) |
+| Vercel production result | [Completed deployment](https://vercel.com/kandula/fairstage/ChfMr1z4ebtoX5nGVTKXCXqXfKR4) |
+| GitHub deployment | `6845906427`; Production; successful source mapping |
+| Deployment URL | [fairstage-db44lkw51-kandula.vercel.app](https://fairstage-db44lkw51-kandula.vercel.app) |
+| Public check time | `2026-10-05T07:01:42.267Z` |
+| Public pages | 18 paths returned HTTP 200 |
+| Health | HTTP 503; `status: unavailable`, `mode: production`, `version: 1.2.0` |
 | Configuration | All service flags false; default currency INR |
-| Rejection checks | Empty registration and unsigned provider webhooks returned 503 |
-| Pre-merge backup | `backup/pre-production-202610041015` at `1b02527a805544a0989fd1bddf80448f6de7b30c` |
+| Rejection checks | Empty registration, unsigned provider webhooks, and operator access returned 503; unauthorized maintenance returned 401 |
+| Pre-merge backup | `backup/pre-first-stage-202610050122` at `79ca8cf8c3050be62c571c3f258ae3cdf9346070` |
 
 GitHub's connected Vercel integration reported a completed deployment for the application source above.
 The Vercel MCP connection returned HTTP 403 for this project's team scope.
 The verification used the GitHub deployment record and direct public HTTP checks.
 
-The public workspace and account page showed service-unavailable notices with visible controls.
+The public workspace, account page, and operator console showed service-unavailable notices with visible controls.
 The public app contained no sample workspace records or demo banners.
 The account and payment flows passed in CI.
 The flows did not run against live providers.
@@ -47,15 +48,21 @@ The [machine-readable record](deployment-evidence.json) describes this applicati
 Use [the release evaluation](EVALUATION.md) for test counts and scope.
 Keep credentials, authentication tokens, and personal records out of public evidence.
 
-## Pending activation
+## Required activation
 
 - Create and migrate the managed PostgreSQL database.
 - Configure the exact production app origin and database connection.
 - Configure Google OAuth or a verified email sender for low-friction sign-in.
+- Configure the verified operator allowlist and the maintenance secret.
 - Activate the Razorpay merchant and approved Route transfers.
-- Check candidate linked accounts through the operator.
+- Check the candidates' linked accounts through the operator.
 - Select commercial hosting before a paid launch.
 - Complete provider acceptance and database backup checks.
+
+The daily maintenance schedule exists in `vercel.json`.
+The schedule needs `CRON_SECRET` and a migrated database before it can complete a run.
+Use `npm run readiness -- --database --live` after service configuration.
+Read [the first-stage delivery](FIRST_STAGE.md) for the feature and activation matrix.
 
 USD transfers remain disabled for the India operator under the current funds flow.
 No live money action or paid hosting upgrade formed part of this verification.
