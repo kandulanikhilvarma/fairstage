@@ -37,10 +37,11 @@ Accounts and payment services remain unavailable until the owner completes the a
 GitHub's connected Vercel integration reported a completed deployment for the application source above.
 The Vercel MCP connection returned HTTP 403 for this project's team scope.
 The verification used the GitHub deployment record and direct public HTTP checks.
+
 The owner browser session accessed the project and confirmed the correct production `APP_URL`.
 Neon setup reached the terms acceptance step.
 The setup still needs approval of the terms.
-The project has no database.
+The project has no configured database.
 
 The public workspace, account page, and operator console showed service-unavailable notices with visible controls.
 The public app contained no sample workspace records or demo banners.
