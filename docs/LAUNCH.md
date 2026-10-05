@@ -26,6 +26,8 @@ Keep each payment flag disabled until the corresponding provider checks pass.
 | `GOOGLE_CLIENT_SECRET` | Google OAuth credential for the server |
 | `RESEND_API_KEY` | Credential for email links, verification, and password reset |
 | `EMAIL_FROM` | Verified sender address |
+| `OPERATOR_EMAILS` | Comma-separated addresses for verified operator accounts |
+| `CRON_SECRET` | Server secret for authenticated scheduled maintenance |
 | `RAZORPAY_PAYMENTS_ENABLED` | Explicit gate for Razorpay payments |
 | `RAZORPAY_ROUTE_ENABLED` | Explicit gate for approved Route transfers |
 | `RAZORPAY_KEY_ID` | Public checkout identifier and server account identifier |

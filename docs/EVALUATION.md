@@ -22,6 +22,20 @@ The unsafe direct-URL readiness check returned exit code 1 without credential va
 The parser checks inspect the installed client's effective TLS configuration.
 These checks do not establish a live provider connection or complete service activation.
 
+The [patch CI run](https://github.com/kandulanikhilvarma/fairstage/actions/runs/37308353978) passed on head `4990c00a69536990be87739840fe6f9d01369079`.
+CI passed all 307 unit and API tests and all 21 browser checks.
+CI applied all six migrations to PostgreSQL 17.
+CI also passed source lint, TypeScript, and the production build.
+
+The [merged patch](https://github.com/kandulanikhilvarma/fairstage/pull/15) has source `3076fb9ea97c2aa28e31ba81bde851a6ee51bd32`.
+The merged tree matches the verified head.
+The [main CI run](https://github.com/kandulanikhilvarma/fairstage/actions/runs/37309016036) also passed on the merged patch.
+The pre-merge backup is `backup/pre-database-tls-202610051751` at `96b02b08233c3d101ad432fe55b6513335e2d090`.
+The public deployment returned version 1.2.1 and HTTP 200 on all 18 checked pages.
+Health returned HTTP 503, and all service flags remained false.
+The production dependency audit reported zero vulnerabilities.
+See [the deployment record](DEPLOYMENT.md) for source mapping and activation gates.
+
 ## Version 1.2.0 verified release
 
 The [release CI run](https://github.com/kandulanikhilvarma/fairstage/actions/runs/37229771332) passed on head `96d45717a72283325702fef7a90d3526083252fa`.
