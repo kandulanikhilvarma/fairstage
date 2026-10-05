@@ -1,13 +1,13 @@
 import { readFile, readdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { Pool } from "pg";
+import { databaseConfig } from "../lib/database-config";
 
 async function migrate() {
   if (!process.env.DATABASE_URL)
     throw new Error("Set DATABASE_URL before you run the migration.");
   const pool = new Pool({
-    connectionString:
-      process.env.DATABASE_DIRECT_URL || process.env.DATABASE_URL,
+    ...databaseConfig(process.env, "migration"),
     connectionTimeoutMillis: 8000,
   });
   const client = await pool.connect();

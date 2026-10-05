@@ -1,11 +1,12 @@
 import { Pool, type PoolClient, type QueryResultRow } from "pg";
+import { databaseConfig } from "./database-config";
 
 let pool: Pool | undefined;
 export function database() {
   if (!process.env.DATABASE_URL)
     throw new Error("The database is not configured.");
   pool ??= new Pool({
-    connectionString: process.env.DATABASE_URL,
+    ...databaseConfig(process.env),
     max: 4,
     idleTimeoutMillis: 20000,
     connectionTimeoutMillis: 8000,

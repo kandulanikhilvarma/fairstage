@@ -10,6 +10,8 @@ node --env-file=.env.local --import tsx scripts/check-readiness.ts --database --
 
 Use `DATABASE_DIRECT_URL` for migrations and schema checks when the provider supplies a direct connection.
 Use a pooled `DATABASE_URL` at runtime.
+Use `sslmode=verify-full` in both production database URLs.
+The app rejects TLS settings that disable certificate or hostname verification.
 The command returns exit code 1 when a required check fails.
 
 The daily maintenance route needs a random `CRON_SECRET` with at least 32 URL-safe characters.

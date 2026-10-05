@@ -2,6 +2,26 @@
 
 Evaluation record date: 5 October 2026.
 
+## Version 1.2.1 database TLS patch
+
+The shared validator checks runtime and optional direct database URLs.
+Production connections must verify the server certificate and hostname.
+The validator rejects weaker libpq settings and nested connection strings.
+It also recognizes HTTPS origins after URL normalization.
+HTTP loopback apps with loopback databases retain their local fixtures.
+
+The focused parser and readiness suite passed 42 tests.
+The serial unit suite passed 303 tests across ten files.
+Four PostgreSQL concurrency tests skipped locally.
+The final source lint, TypeScript check, and production build passed.
+The built server returned the package version, 1.2.1, through its health endpoint.
+
+The first parallel run hit four PGlite initialization timeouts.
+The serial run passed without changes to test timeouts.
+The unsafe direct-URL readiness check returned exit code 1 without credential values.
+The parser checks inspect the installed client's effective TLS configuration.
+These checks do not establish a live provider connection or complete service activation.
+
 ## Version 1.2.0 verified release
 
 The [release CI run](https://github.com/kandulanikhilvarma/fairstage/actions/runs/37229771332) passed on head `96d45717a72283325702fef7a90d3526083252fa`.

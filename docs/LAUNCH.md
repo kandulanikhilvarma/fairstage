@@ -20,6 +20,7 @@ Keep each payment flag disabled until the corresponding provider checks pass.
 | --- | --- |
 | `APP_URL` | Exact trusted origin and provider return origin |
 | `DATABASE_URL` | PostgreSQL connection with verified TLS |
+| `DATABASE_DIRECT_URL` | Direct connection for PostgreSQL migrations; the same TLS checks apply |
 | `DEFAULT_CURRENCY` | `INR` or `USD` for new forms |
 | `GOOGLE_CLIENT_ID` | Google OAuth web client identifier |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth credential for the server |
@@ -58,6 +59,13 @@ Production payment routes require live provider keys.
 
 The migration uses a transaction and advisory lock.
 The migration registry records each applied file.
+
+Use `sslmode=verify-full` in both production connection URLs.
+The app checks the installed PostgreSQL parser's effective TLS settings.
+The app rejects settings that omit certificate or hostname verification.
+An optional direct URL must pass the same checks before a runtime or migration connection.
+HTTP loopback apps with loopback databases can use the local development and CI fixtures.
+
 Do not edit an applied migration.
 Add a new migration for later schema changes.
 

@@ -1,6 +1,7 @@
 # First-stage delivery
 
-Version 1.2.0 completes the software scope below.
+Version 1.2.1 contains the software scope below.
+The patch requires certificate and hostname verification for production database connections.
 The account pilot still needs external service activation.
 A passing build does not establish a live payment service.
 
@@ -44,7 +45,7 @@ The code keeps the related actions unavailable until their gates pass.
 | Item                  | Required action                                                                                                       |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | Managed database      | Accept the provider terms, create the durable database, configure TLS, and apply migrations                           |
-| Hosting access        | Restore the Vercel connector's team access or configure the project through its owner account                         |
+| Hosting access        | The owner browser session can access the project; the MCP connector still needs team authorization                   |
 | Low-friction sign-in  | Configure Google OAuth and a verified email sender; check the production callback and delivery                        |
 | Operator access       | Set exact operator addresses; prove ownership through verified sign-in                                                |
 | Scheduled maintenance | Configure `CRON_SECRET`; verify a successful authenticated run and its audit result                                   |
