@@ -2,18 +2,39 @@
 
 Evaluation record date: 5 October 2026.
 
-## Version 1.2.0 local checks
+## Version 1.2.0 verified release
+
+The [release CI run](https://github.com/kandulanikhilvarma/fairstage/actions/runs/37229771332) passed on head `96d45717a72283325702fef7a90d3526083252fa`.
+CI passed all 276 unit and API tests and all 21 browser checks.
+CI applied all six migrations to PostgreSQL 17.
+CI passed source lint, TypeScript, and the production build.
+
+The [merged release](https://github.com/kandulanikhilvarma/fairstage/pull/13) has source `87b9140c1b0830cfc243521b42218cfc16b815bb`.
+The merged tree matches the verified head.
+The [main CI run](https://github.com/kandulanikhilvarma/fairstage/actions/runs/37229975321) also passed on the merged source.
+The pre-merge backup is `backup/pre-first-stage-202610050122` at `79ca8cf8c3050be62c571c3f258ae3cdf9346070`.
+
+The operator screenshots use isolated route fixtures:
+
+- [Desktop review controls](screenshots/operator-desktop.png).
+- [Mobile review controls](screenshots/operator-mobile.png).
+
+The fixtures do not prove live provider activation.
+
+### Local checks
 
 The release adds restricted case review, complete-history totals, stable pagination, and authenticated maintenance.
 The local source lint, TypeScript check, and production build passed.
 Unit and API checks passed 272 tests across nine files.
-Four PostgreSQL concurrency cases need the CI database and skipped locally.
+The local run skipped four concurrency cases that need a PostgreSQL connection.
+
 All six migrations passed through the PGlite fixtures.
-The CI database must also apply the migrations before release.
+CI also applied all six migrations to PostgreSQL 17 before the merge.
+
 Eight public browser checks passed locally.
 Eight operator checks passed with restricted-access responses and isolated route fixtures.
 The fixtures cover mobile targets, accessibility, stale edits, pagination, and recovery.
-Five account workflow checks need the CI database and skipped locally.
+The local run skipped five account workflow checks that need a PostgreSQL connection.
 
 The readiness report exposes configuration status without credential values.
 The report does not establish provider approval.
