@@ -1,6 +1,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import { Pool } from "pg";
 import { readinessChecks } from "../lib/readiness";
+import { databaseConfig } from "../lib/database-config";
 
 async function main() {
   const args = new Set(process.argv.slice(2));
@@ -9,15 +10,17 @@ async function main() {
   const checks = readinessChecks(process.env);
   const verification: { id: string; passed: boolean; message: string }[] = [];
   if (args.has("--database")) {
-    const pool = new Pool({
-      connectionString:
-        process.env.DATABASE_DIRECT_URL || process.env.DATABASE_URL,
-      connectionTimeoutMillis: 8000,
-      query_timeout: 10000,
-      max: 1,
-    });
+    let pool: Pool | undefined;
     try {
-      if (!process.env.DATABASE_URL) throw new Error();
+      pool = new Pool({
+        ...databaseConfig(
+          { ...process.env, NODE_ENV: "production" },
+          "migration",
+        ),
+        connectionTimeoutMillis: 8000,
+        query_timeout: 10000,
+        max: 1,
+      });
       const expected = (await readdir("db")).filter((name) =>
         /^\d+_.+\.sql$/.test(name),
       );
@@ -37,7 +40,7 @@ async function main() {
         message: "The database or migration registry is not available.",
       });
     } finally {
-      await pool.end();
+      await pool?.end();
     }
   }
   if (args.has("--live")) {

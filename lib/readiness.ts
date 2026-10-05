@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { databaseUrlConfig } from "./database-config";
 
 type Environment = Record<string, string | undefined>;
 export interface ReadinessCheck {
@@ -11,6 +12,7 @@ export interface ReadinessCheck {
 export function readinessChecks(env: Environment): ReadinessCheck[] {
   let origin = false;
   let database = false;
+  let directDatabase = false;
   try {
     const url = new URL(env.APP_URL ?? "");
     origin =
@@ -22,14 +24,12 @@ export function readinessChecks(env: Environment): ReadinessCheck[] {
       !url.hash;
   } catch {}
   try {
-    const url = new URL(env.DATABASE_URL ?? "");
-    database =
-      ["postgres:", "postgresql:"].includes(url.protocol) &&
-      ["require", "verify-ca", "verify-full"].includes(
-        url.searchParams.get("sslmode") ?? "",
-      ) &&
-      !!url.hostname &&
-      url.pathname.length > 1;
+    databaseUrlConfig(env.DATABASE_URL, true);
+    database = true;
+  } catch {}
+  try {
+    databaseUrlConfig(env.DATABASE_DIRECT_URL, true);
+    directDatabase = true;
   } catch {}
   const emails = (env.OPERATOR_EMAILS ?? "")
     .split(/[,\n]/)
@@ -64,8 +64,19 @@ export function readinessChecks(env: Environment): ReadinessCheck[] {
     required(
       "database",
       database,
-      "Set DATABASE_URL to a managed PostgreSQL connection with TLS.",
+      "Set DATABASE_URL to PostgreSQL with certificate and hostname verification.",
     ),
+    env.DATABASE_DIRECT_URL
+      ? required(
+          "database_direct",
+          directDatabase,
+          "The direct PostgreSQL connection must verify the certificate and hostname.",
+        )
+      : optional(
+          "database_direct",
+          false,
+          "An optional direct connection can serve migrations and schema checks.",
+        ),
     required(
       "email",
       !!env.RESEND_API_KEY && !!env.EMAIL_FROM,

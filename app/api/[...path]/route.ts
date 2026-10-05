@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { randomUUID } from "node:crypto";
 import { z, ZodError } from "zod";
+import { version as releaseVersion } from "@/package.json";
 import { query, transaction } from "@/lib/db";
 import {
   canTransition,
@@ -87,15 +88,15 @@ async function handle(request: Request, context: Context) {
   if (route === "health" && method === "GET") {
     if (!process.env.DATABASE_URL)
       return ok(
-        { status: "unavailable", mode: "production", version: "1.2.0" },
+        { status: "unavailable", mode: "production", version: releaseVersion },
         503,
       );
     try {
       await query("SELECT 1");
-      return ok({ status: "ok", mode: "production", version: "1.2.0" });
+      return ok({ status: "ok", mode: "production", version: releaseVersion });
     } catch {
       return ok(
-        { status: "unavailable", mode: "production", version: "1.2.0" },
+        { status: "unavailable", mode: "production", version: releaseVersion },
         503,
       );
     }
