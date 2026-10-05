@@ -12,7 +12,7 @@ A passing build does not establish a live payment service.
 | Candidate accounts    | Google, email links, passwords, profiles, and recovery                         | Signatures, expiry, replay, ownership races, and browser flows          |
 | Employer workflow     | Published roles, application search, applicant states, and paid-round offers   | Tenant checks, validation, role checks, and browser flows               |
 | Candidate workflow    | Applications, withdrawal, round acceptance, private notes, and calendar files  | Ownership checks and browser flows                                      |
-| Payment integration   | Razorpay, approved Stripe flow, signed events, refunds, and reversals          | Provider mocks, signatures, replay, and state checks                    |
+| Payment integration   | Razorpay, gated Stripe flow, signed events, refunds, and reversals             | Provider mocks, signatures, replay, and state checks                    |
 | Complete records      | Currency totals, stable pages, CSV and account export                          | Histories above 200 records, cursors, and exports                       |
 | Operator review       | Restricted queues, review notes, and audit history                             | Access denial, concurrent reviews, stale versions, and browser checks   |
 | Maintenance           | Daily cleanup of expired temporary credentials and rate limits                 | Authorization, expiry, batch limits, rollback, and duplicate-run checks |

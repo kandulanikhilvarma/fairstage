@@ -1,13 +1,13 @@
 {
-  "releaseVersion": "1.2.0",
+  "releaseVersion": "1.2.1",
   "status": "deployed-services-unavailable",
-  "checkedAt": "2026-10-05T07:01:42.267Z",
-  "sourceCommit": "87b9140c1b0830cfc243521b42218cfc16b815bb",
+  "checkedAt": "2026-10-05T12:22:59.018Z",
+  "sourceCommit": "3076fb9ea97c2aa28e31ba81bde851a6ee51bd32",
   "url": "https://fairstage.vercel.app",
   "health": {
     "status": "unavailable",
     "mode": "production",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "httpStatus": 503
   },
   "configuration": {

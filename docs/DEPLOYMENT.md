@@ -2,7 +2,7 @@
 
 The production app uses a connected GitHub repository and Vercel project.
 The application release reached production on 5 October 2026 in India.
-The public checks confirmed version 1.2.0 and the production runtime.
+The public checks confirmed version 1.2.1 and the production runtime.
 Accounts and payment services remain unavailable until the owner completes the activation requirements.
 
 | Item | Target |
@@ -19,24 +19,29 @@ Accounts and payment services remain unavailable until the owner completes the a
 
 | Evidence | Observed result |
 | --- | --- |
-| Application source | `87b9140c1b0830cfc243521b42218cfc16b815bb` |
-| Verified PR head | `96d45717a72283325702fef7a90d3526083252fa` |
-| Release PR | [Merged PR #13](https://github.com/kandulanikhilvarma/fairstage/pull/13) |
-| Release CI | [Successful run](https://github.com/kandulanikhilvarma/fairstage/actions/runs/37229771332) |
-| Main CI | [Successful run](https://github.com/kandulanikhilvarma/fairstage/actions/runs/37229975321) |
-| Vercel production result | [Completed deployment](https://vercel.com/kandula/fairstage/ChfMr1z4ebtoX5nGVTKXCXqXfKR4) |
-| GitHub deployment | `6845906427`; Production; successful source mapping |
-| Deployment URL | [fairstage-db44lkw51-kandula.vercel.app](https://fairstage-db44lkw51-kandula.vercel.app) |
-| Public check time | `2026-10-05T07:01:42.267Z` |
+| Application source | `3076fb9ea97c2aa28e31ba81bde851a6ee51bd32` |
+| Verified PR head | `4990c00a69536990be87739840fe6f9d01369079` |
+| Release PR | [Merged PR #15](https://github.com/kandulanikhilvarma/fairstage/pull/15) |
+| Release CI | [Successful run](https://github.com/kandulanikhilvarma/fairstage/actions/runs/37308353978) |
+| Main CI | [Successful merged-source run](https://github.com/kandulanikhilvarma/fairstage/actions/runs/37309016036) |
+| Vercel production result | [Completed deployment](https://vercel.com/kandula/fairstage/4QuJBVMaWn2j4iin49t9LrQtxES2) |
+| GitHub deployment | `6858832053`; Production; successful source mapping |
+| Deployment URL | [fairstage-dq910sp4q-kandula.vercel.app](https://fairstage-dq910sp4q-kandula.vercel.app) |
+| Public check time | `2026-10-05T12:22:59.018Z` |
 | Public pages | 18 paths returned HTTP 200 |
-| Health | HTTP 503; `status: unavailable`, `mode: production`, `version: 1.2.0` |
+| Health | HTTP 503; `status: unavailable`, `mode: production`, `version: 1.2.1` |
 | Configuration | All service flags false; default currency INR |
 | Rejection checks | Empty registration, unsigned provider webhooks, and operator access returned 503; unauthorized maintenance returned 401 |
-| Pre-merge backup | `backup/pre-first-stage-202610050122` at `79ca8cf8c3050be62c571c3f258ae3cdf9346070` |
+| Pre-merge backup | `backup/pre-database-tls-202610051751` at `96b02b08233c3d101ad432fe55b6513335e2d090` |
 
 GitHub's connected Vercel integration reported a completed deployment for the application source above.
 The Vercel MCP connection returned HTTP 403 for this project's team scope.
 The verification used the GitHub deployment record and direct public HTTP checks.
+
+The owner browser session accessed the project and confirmed the correct production `APP_URL`.
+Neon setup reached the terms acceptance step.
+The setup still needs approval of the terms.
+The project has no configured database.
 
 The public workspace, account page, and operator console showed service-unavailable notices with visible controls.
 The public app contained no sample workspace records or demo banners.
@@ -51,7 +56,7 @@ Keep credentials, authentication tokens, and personal records out of public evid
 ## Required activation
 
 - Create and migrate the managed PostgreSQL database.
-- Configure the exact production app origin and database connection.
+- Configure the database connection; the production app origin is already correct.
 - Configure Google OAuth or a verified email sender for low-friction sign-in.
 - Configure the verified operator allowlist and the maintenance secret.
 - Activate the Razorpay merchant and approved Route transfers.
