@@ -20,7 +20,7 @@ A passing build does not establish a live payment service.
 | Interface             | Visible controls, responsive layouts, keyboard focus, and clear state messages | Desktop, mobile, accessibility, and failure-state checks                |
 
 The repository contains the migrations, tests, deployment configuration, and operator procedures.
-The source has no MIT license grant.
+The source and documentation use the Apache-2.0 license.
 The application has no preloaded candidate, company, payment, or interview records.
 
 ## Release acceptance
@@ -45,7 +45,7 @@ The code keeps the related actions unavailable until their gates pass.
 | Item                  | Required action                                                                                                       |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | Managed database      | Accept the provider terms, create the durable database, configure TLS, and apply migrations                           |
-| Hosting access        | The owner browser session can access the project; the MCP connector still needs team authorization                   |
+| Hosting access        | The owner browser session can access the project; the MCP connector still needs team authorization                    |
 | Low-friction sign-in  | Configure Google OAuth and a verified email sender; check the production callback and delivery                        |
 | Operator access       | Set exact operator addresses; prove ownership through verified sign-in                                                |
 | Scheduled maintenance | Configure `CRON_SECRET`; verify a successful authenticated run and its audit result                                   |

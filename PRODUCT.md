@@ -36,7 +36,7 @@ Global scope does not imply payment support in every country.
 
 The user requested a complete app, public GitHub repository, evaluation, and Vercel deployment.
 The user requested visible product rules and an optional open-weight AI assistant.
-The current release has no general reuse license, as the user specified.
+The source and documentation use Apache-2.0 under the project license.
 The AI assistant helps with preparation and questions. A person makes each hire decision.
 
 The original idea includes recovery from the first salary after a hire.

@@ -2,8 +2,9 @@ cff-version: 1.2.0
 message: Cite this repository if you use its software or product model.
 title: Fairstage
 type: software
+license: Apache-2.0
 version: 1.2.1
-date-released: '2026-10-05'
+date-released: "2026-10-05"
 authors:
   - family-names: Kandula
     given-names: Nikhilvarma
